@@ -167,6 +167,17 @@ export function extractFeatures(additionalInfo?: Record<string, unknown> | null)
     });
   }
 
+  // Parking
+  if (Array.isArray(additionalInfo.Parking)) {
+    additionalInfo.Parking.forEach((item: Record<string, boolean>) => {
+      Object.entries(item).forEach(([key, val]) => {
+        if (val === true && !amenities.includes(key)) {
+          amenities.push(key);
+        }
+      });
+    });
+  }
+
   return { accessibility, amenities };
 }
 

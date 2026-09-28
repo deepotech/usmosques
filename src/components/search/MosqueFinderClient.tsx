@@ -11,6 +11,12 @@ import { FinderFilters, SortOption } from '@/components/search/FinderFilters';
 import { ViewToggle } from '@/components/search/ViewToggle';
 import { calculateHaversineDistanceMiles, formatDistance } from '@/lib/geo/distance';
 import { getMosqueOpenStatus, getTimezoneForState } from '@/lib/geo/timezone';
+import { AmenityFilterState, EMPTY_AMENITY_FILTERS } from '@/types/amenity';
+import {
+  matchesAmenityFilters,
+  countAmenityCapabilities,
+  countActiveAmenityFilters,
+} from '@/lib/amenity/amenity-engine';
 import { Compass, AlertCircle, XCircle, MapPin, Navigation, ExternalLink } from 'lucide-react';
 
 interface MosqueFinderClientProps {
@@ -35,11 +41,12 @@ export function MosqueFinderClient({
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [visibleCount, setVisibleCount] = useState(24);
+  const [amenityFilters, setAmenityFilters] = useState<AmenityFilterState>(EMPTY_AMENITY_FILTERS);
 
   // Reset pagination when search or filters change
   useEffect(() => {
     setVisibleCount(24);
-  }, [searchQuery, selectedCity, openNowOnly, selectedStatus, sortBy, userCoords]);
+  }, [searchQuery, selectedCity, openNowOnly, selectedStatus, sortBy, userCoords, amenityFilters]);
 
   // Geolocation handlers
   const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
@@ -97,6 +104,11 @@ export function MosqueFinderClient({
       });
     }
 
+    // Amenity & Accessibility filters (Strict three-valued matching)
+    if (countActiveAmenityFilters(amenityFilters) > 0) {
+      result = result.filter(m => matchesAmenityFilters(m, amenityFilters));
+    }
+
     // Calculate distance if user location is available
     if (userCoords) {
       result = result.map(m => ({
@@ -127,7 +139,28 @@ export function MosqueFinderClient({
     });
 
     return result;
-  }, [initialMosques, searchQuery, selectedCity, userCoords, openNowOnly, selectedStatus, sortBy]);
+  }, [
+    initialMosques,
+    searchQuery,
+    selectedCity,
+    userCoords,
+    openNowOnly,
+    selectedStatus,
+    sortBy,
+    amenityFilters,
+  ]);
+
+  // Compute live amenity capabilities counts based on active city/status candidate pool
+  const amenityCounts = useMemo(() => {
+    let candidates = initialMosques.filter(m => m.dataStatus !== 'excluded');
+    if (selectedStatus === 'verified') {
+      candidates = candidates.filter(m => m.dataStatus === 'verified');
+    }
+    if (selectedCity) {
+      candidates = candidates.filter(m => m.city.toLowerCase() === selectedCity.toLowerCase());
+    }
+    return countAmenityCapabilities(candidates);
+  }, [initialMosques, selectedStatus, selectedCity]);
 
   // Ensure selected mosque remains valid when filtered results change
   useEffect(() => {
@@ -177,10 +210,16 @@ export function MosqueFinderClient({
     setUserCoords(null);
     setSortBy('rating');
     setSelectedMosqueId(null);
+    setAmenityFilters(EMPTY_AMENITY_FILTERS);
   }, []);
 
   const hasActiveFilters = Boolean(
-    searchQuery || selectedCity || openNowOnly || selectedStatus !== 'verified' || userCoords
+    searchQuery ||
+      selectedCity ||
+      openNowOnly ||
+      selectedStatus !== 'verified' ||
+      userCoords ||
+      countActiveAmenityFilters(amenityFilters) > 0
   );
 
   const selectedMosque = useMemo(
@@ -240,6 +279,9 @@ export function MosqueFinderClient({
           onSelectCity={setSelectedCity}
           onClearFilters={handleClearAllFilters}
           hasActiveFilters={hasActiveFilters}
+          amenityFilters={amenityFilters}
+          onAmenityFiltersChange={setAmenityFilters}
+          amenityCounts={amenityCounts}
         />
       </div>
 

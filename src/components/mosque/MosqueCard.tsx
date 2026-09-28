@@ -6,6 +6,7 @@ import { MosqueStatusBadge } from './MosqueStatusBadge';
 import { DistanceBadge } from './DistanceBadge';
 import { RatingSummary } from './RatingSummary';
 import { ActionButtons } from './ActionButtons';
+import { extractAmenityCapabilities, formatAmenityHighlights } from '@/lib/amenity/amenity-engine';
 import { MapPin, Building2, CheckCircle2 } from 'lucide-react';
 
 interface MosqueCardProps {
@@ -102,31 +103,14 @@ export function MosqueCard({
 
         {/* Secondary Amenity Hierarchy (Clean concise row) */}
         {(() => {
-          const hasAccessible = mosque.accessibility.some(a =>
-            a.toLowerCase().includes('wheelchair') || a.toLowerCase().includes('accessible')
-          );
-          const hasParking =
-            mosque.accessibility.some(a => a.toLowerCase().includes('parking')) ||
-            mosque.amenities.some(a => a.toLowerCase().includes('parking'));
-          const hasRestroom =
-            mosque.accessibility.some(a => a.toLowerCase().includes('restroom')) ||
-            mosque.amenities.some(a => a.toLowerCase().includes('restroom'));
+          const caps = extractAmenityCapabilities(mosque);
+          const highlights = formatAmenityHighlights(caps);
 
-          const features: string[] = [];
-          if (hasAccessible) features.push('♿ Accessible');
-          if (hasParking) features.push('🅿 Parking');
-          if (hasRestroom) features.push('Restroom');
-
-          if (features.length === 0 && (mosque.accessibility.length > 0 || mosque.amenities.length > 0)) {
-            const fallback = [...mosque.accessibility, ...mosque.amenities].slice(0, 2);
-            features.push(...fallback);
-          }
-
-          if (features.length === 0) return null;
+          if (highlights.length === 0) return null;
 
           return (
             <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
-              <span>{features.join(' · ')}</span>
+              <span>{highlights.join(' · ')}</span>
             </div>
           );
         })()}

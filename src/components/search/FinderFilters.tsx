@@ -1,5 +1,7 @@
 import React from 'react';
 import { SlidersHorizontal, ArrowUpDown, X, Check } from 'lucide-react';
+import { AmenityFilterState, AmenityFilterCounts } from '@/types/amenity';
+import { AmenityFilterDrawer } from '@/components/search/AmenityFilterDrawer';
 
 export type SortOption = 'nearest' | 'rating' | 'name';
 
@@ -16,6 +18,9 @@ interface FinderFiltersProps {
   onSelectCity: (city: string) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  amenityFilters: AmenityFilterState;
+  onAmenityFiltersChange: (filters: AmenityFilterState) => void;
+  amenityCounts: AmenityFilterCounts;
 }
 
 export function FinderFilters({
@@ -31,6 +36,9 @@ export function FinderFilters({
   onSelectCity,
   onClearFilters,
   hasActiveFilters,
+  amenityFilters,
+  onAmenityFiltersChange,
+  amenityCounts,
 }: FinderFiltersProps) {
   return (
     <div className="space-y-4">
@@ -72,6 +80,13 @@ export function FinderFilters({
             {selectedStatus === 'verified' && <Check className="h-3 w-3" />}
             Verified Only
           </button>
+
+          {/* Accessibility & Amenities Drawer */}
+          <AmenityFilterDrawer
+            filters={amenityFilters}
+            onChange={onAmenityFiltersChange}
+            counts={amenityCounts}
+          />
 
           {/* Clear Filters CTA */}
           {hasActiveFilters && (
