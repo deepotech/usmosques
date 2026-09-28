@@ -45,18 +45,20 @@ describe('Phase 3B: State Activation & Multi-State Verification', () => {
     expect(result.metrics.validGpsPercentage).toBeGreaterThanOrEqual(95);
   });
 
-  // 4. Dormant states remain disabled
-  it('4. Dormant states (FL, IL, CT, IN, SC) remain strictly disabled', () => {
-    const dormantCodes = ['FL', 'IL', 'CT', 'IN', 'SC'];
+  // 4. Dormant states remain disabled (updated in Phase 3C: FL and IL now active)
+  it('4. Dormant states (CT, IN, SC) remain strictly disabled after Phase 3B', () => {
+    const dormantCodes = ['CT', 'IN', 'SC'];
     dormantCodes.forEach(code => {
       expect(isStateEnabled(code)).toBe(false);
       expect(STATE_REGISTRY[code]?.enabled).toBe(false);
     });
 
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(3);
+    expect(enabled.length).toBeGreaterThanOrEqual(3); // CA, TX, NY at minimum
     const codes = enabled.map(s => s.code);
-    expect(codes).toEqual(['CA', 'TX', 'NY']);
+    expect(codes).toContain('CA');
+    expect(codes).toContain('TX');
+    expect(codes).toContain('NY');
   });
 
   // 5. TX records stay within Texas
@@ -189,7 +191,7 @@ describe('Phase 3B: State Activation & Multi-State Verification', () => {
   });
 
   // 15. Sitemap eligibility
-  it('15. Dynamic sitemap includes CA, TX, and NY while strictly excluding dormant states', async () => {
+  it('15. Dynamic sitemap includes CA, TX, and NY state routes', async () => {
     const routes = await sitemap();
     const urls = routes.map(r => r.url);
 
@@ -200,9 +202,10 @@ describe('Phase 3B: State Activation & Multi-State Verification', () => {
     expect(urls.some(u => u.includes('/mosques/texas/houston'))).toBe(true);
     expect(urls.some(u => u.includes('/mosques/new-york/brooklyn'))).toBe(true);
 
-    // Dormant states never present
-    expect(urls.some(u => u.includes('/mosques/florida'))).toBe(false);
-    expect(urls.some(u => u.includes('/mosques/illinois'))).toBe(false);
+    // Dormant states (CT, IN, SC) must never appear
+    expect(urls.some(u => u.includes('/mosques/connecticut'))).toBe(false);
+    expect(urls.some(u => u.includes('/mosques/indiana'))).toBe(false);
+    expect(urls.some(u => u.includes('/mosques/south-carolina'))).toBe(false);
   });
 
   // 16. State metadata generation

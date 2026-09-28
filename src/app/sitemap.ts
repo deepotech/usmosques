@@ -64,7 +64,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       );
     }
 
-    return [...staticRoutes, ...stateRoutes, ...cityRoutes, ...mosqueRoutes];
+    const allRoutes = [...staticRoutes, ...stateRoutes, ...cityRoutes, ...mosqueRoutes];
+    const seenUrls = new Set<string>();
+    return allRoutes.filter(r => {
+      if (seenUrls.has(r.url)) return false;
+      seenUrls.add(r.url);
+      return true;
+    });
   } catch (e) {
     console.error('Failed generating dynamic sitemap routes:', e);
     return [...staticRoutes, ...stateRoutes];

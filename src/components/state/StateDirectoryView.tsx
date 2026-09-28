@@ -26,6 +26,7 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
   });
 
   const totalPublishableMosques = allCities.reduce((sum, c) => sum + c.mosqueCount, 0);
+  const totalVerifiedMosques = allCities.reduce((sum, c) => sum + c.verifiedCount, 0);
 
   // Structured Data Schema
   const breadcrumbSchema = generateBreadcrumbSchema([
@@ -67,7 +68,7 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
         <div className="mt-6 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-6 text-xs text-slate-600">
           <div className="flex items-center gap-2 font-medium">
             <span className="flex h-2 w-2 rounded-full bg-brand-600" />
-            <span><strong className="text-slate-900">{totalPublishableMosques}</strong> Verified Locations</span>
+            <span><strong className="text-slate-900">{totalPublishableMosques}</strong> Mosque Locations ({totalVerifiedMosques} Verified)</span>
           </div>
           <div className="flex items-center gap-2 font-medium">
             <span className="flex h-2 w-2 rounded-full bg-brand-600" />
