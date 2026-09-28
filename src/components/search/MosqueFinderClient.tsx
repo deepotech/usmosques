@@ -34,6 +34,12 @@ export function MosqueFinderClient({
   const [sortBy, setSortBy] = useState<SortOption>('rating');
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
+  const [visibleCount, setVisibleCount] = useState(24);
+
+  // Reset pagination when search or filters change
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [searchQuery, selectedCity, openNowOnly, selectedStatus, sortBy, userCoords]);
 
   // Geolocation handlers
   const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
@@ -131,17 +137,28 @@ export function MosqueFinderClient({
   }, [filteredMosques, selectedMosqueId]);
 
   // Marker selection callback: highlights card and scrolls into view on desktop
-  const handleSelectMosque = useCallback((id: string) => {
-    setSelectedMosqueId(id);
+  const handleSelectMosque = useCallback(
+    (id: string) => {
+      setSelectedMosqueId(id);
 
-    // Gently scroll card into view if in list mode
-    if (typeof window !== 'undefined') {
-      const cardEl = document.getElementById(`mosque-card-${id}`);
-      if (cardEl) {
-        cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // If clicked mosque is beyond currently loaded cards, expand visible count
+      const targetIdx = filteredMosques.findIndex(m => m.id === id);
+      if (targetIdx >= 0) {
+        setVisibleCount(prev => Math.max(prev, targetIdx + 1));
       }
-    }
-  }, []);
+
+      // Gently scroll card into view if in list mode
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          const cardEl = document.getElementById(`mosque-card-${id}`);
+          if (cardEl) {
+            cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 50);
+      }
+    },
+    [filteredMosques]
+  );
 
   const handleCardClick = useCallback((id: string) => {
     setSelectedMosqueId(prev => (prev === id ? null : id));
@@ -262,7 +279,7 @@ export function MosqueFinderClient({
             }`}
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredMosques.map((mosque, idx) => (
+              {filteredMosques.slice(0, visibleCount).map((mosque, idx) => (
                 <div key={mosque.id} className="flex flex-col">
                   <MosqueCard
                     mosque={mosque}
@@ -284,6 +301,38 @@ export function MosqueFinderClient({
                 </div>
               ))}
             </div>
+
+            {/* Progressive Loading Controls */}
+            {visibleCount < filteredMosques.length ? (
+              <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200">
+                <p className="text-xs text-slate-500 font-medium">
+                  Showing <strong className="text-slate-900">{Math.min(visibleCount, filteredMosques.length)}</strong> of{' '}
+                  <strong className="text-slate-900">{filteredMosques.length}</strong> mosques
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(prev => Math.min(prev + 24, filteredMosques.length))}
+                    className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors"
+                  >
+                    Load 24 More Mosques
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibleCount(filteredMosques.length)}
+                    className="rounded-xl bg-brand-700 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-800 transition-colors"
+                  >
+                    Show All ({filteredMosques.length})
+                  </button>
+                </div>
+              </div>
+            ) : filteredMosques.length > 24 ? (
+              <div className="pt-4 text-center border-t border-slate-100">
+                <p className="text-xs text-slate-400 font-medium">
+                  All {filteredMosques.length} mosques loaded
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {/* Interactive Map Column */}

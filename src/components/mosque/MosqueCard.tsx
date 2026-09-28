@@ -42,9 +42,12 @@ export function MosqueCard({
               state={mosque.state}
             />
             {mosque.dataStatus === 'verified' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-400/20" title="Verified Islamic center or mosque listing">
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-400/20"
+                title="Listing verified against public directory records"
+              >
                 <CheckCircle2 className="h-3 w-3 text-brand-600" />
-                Verified
+                Verified listing
               </span>
             )}
             {isSelected && (
@@ -97,27 +100,36 @@ export function MosqueCard({
           </div>
         </div>
 
-        {/* Amenities / Accessibility tags if present */}
-        {(mosque.accessibility.length > 0 || mosque.amenities.length > 0) && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {mosque.accessibility.slice(0, 2).map(acc => (
-              <span
-                key={acc}
-                className="rounded bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10"
-              >
-                {acc}
-              </span>
-            ))}
-            {mosque.amenities.slice(0, 1).map(amenity => (
-              <span
-                key={amenity}
-                className="rounded bg-slate-50 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-500/10"
-              >
-                {amenity}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Secondary Amenity Hierarchy (Clean concise row) */}
+        {(() => {
+          const hasAccessible = mosque.accessibility.some(a =>
+            a.toLowerCase().includes('wheelchair') || a.toLowerCase().includes('accessible')
+          );
+          const hasParking =
+            mosque.accessibility.some(a => a.toLowerCase().includes('parking')) ||
+            mosque.amenities.some(a => a.toLowerCase().includes('parking'));
+          const hasRestroom =
+            mosque.accessibility.some(a => a.toLowerCase().includes('restroom')) ||
+            mosque.amenities.some(a => a.toLowerCase().includes('restroom'));
+
+          const features: string[] = [];
+          if (hasAccessible) features.push('♿ Accessible');
+          if (hasParking) features.push('🅿 Parking');
+          if (hasRestroom) features.push('Restroom');
+
+          if (features.length === 0 && (mosque.accessibility.length > 0 || mosque.amenities.length > 0)) {
+            const fallback = [...mosque.accessibility, ...mosque.amenities].slice(0, 2);
+            features.push(...fallback);
+          }
+
+          if (features.length === 0) return null;
+
+          return (
+            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+              <span>{features.join(' · ')}</span>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Action buttons row */}

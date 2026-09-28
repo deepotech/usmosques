@@ -46,7 +46,7 @@ export default async function MosqueNearMePage({ searchParams }: MosqueNearMePag
           Find Mosques Near Me
         </h1>
         <p className="mt-2 text-sm text-slate-600 max-w-2xl">
-          Search over 400 verified California mosques and Islamic centers by distance, city, ZIP code, or facility name.
+          Search 399 verified California mosques and Islamic centers by distance, city, ZIP code, or facility name.
         </p>
       </div>
 
