@@ -1,10 +1,12 @@
 import React from 'react';
 import { MosqueOpeningHourDay } from '@/types/mosque';
-import { getMosqueOpenStatus, getTimezoneForState } from '@/lib/geo/timezone';
+import { getMosqueOpenStatus, getTimezoneForLocation } from '@/lib/geo/timezone';
 import { Clock } from 'lucide-react';
 
 interface MosqueStatusBadgeProps {
   openingHours?: MosqueOpeningHourDay[] | null;
+  latitude?: number;
+  longitude?: number;
   stateCode?: string;
   state?: string;
   className?: string;
@@ -12,11 +14,13 @@ interface MosqueStatusBadgeProps {
 
 export function MosqueStatusBadge({
   openingHours,
+  latitude,
+  longitude,
   stateCode,
   state,
   className = '',
 }: MosqueStatusBadgeProps) {
-  const timezone = getTimezoneForState(stateCode, state);
+  const timezone = getTimezoneForLocation(latitude, longitude, stateCode, state);
   const status = getMosqueOpenStatus(openingHours, timezone);
 
   if (status.state === 'open' || status.state === '24hours') {

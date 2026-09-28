@@ -42,7 +42,7 @@ export function MapPlaceholder({ error, className = '' }: MapPlaceholderProps) {
           <span>Loading Interactive Map...</span>
         </div>
         <p className="mt-1 text-[11px] text-slate-500">
-          Preparing verified California locations
+          Preparing verified mosque locations
         </p>
       </div>
     </div>

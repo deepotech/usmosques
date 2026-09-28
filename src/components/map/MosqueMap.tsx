@@ -5,7 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Mosque } from '@/types/mosque';
 import { createMosqueIcon, createUserLocationIcon } from './map-icons';
-import { getMosqueOpenStatus, getTimezoneForState } from '@/lib/geo/timezone';
+import { getMosqueOpenStatus, getTimezoneForMosque } from '@/lib/geo/timezone';
 import { formatDistance } from '@/lib/geo/distance';
 import { Maximize2, Navigation } from 'lucide-react';
 
@@ -18,9 +18,9 @@ interface MosqueMapProps {
   onLocateUser?: () => void;
 }
 
-// California centroid
-const DEFAULT_CENTER: [number, number] = [36.7783, -119.4179];
-const DEFAULT_ZOOM = 6;
+// United States contiguous centroid for nationwide discovery
+const DEFAULT_CENTER: [number, number] = [39.8283, -98.5795];
+const DEFAULT_ZOOM = 4;
 
 function escapeHtml(str: string): string {
   return str
@@ -139,7 +139,7 @@ export function MosqueMap({
       });
 
       // Compute hours status
-      const tz = getTimezoneForState(m.stateCode, m.state);
+      const tz = getTimezoneForMosque(m);
       const hoursStatus = getMosqueOpenStatus(m.openingHours, tz);
 
       let statusBadgeHtml = '';
@@ -174,6 +174,9 @@ export function MosqueMap({
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
             ${statusBadgeHtml}
             ${distanceHtml}
+          </div>
+          <div style="font-size: 10px; font-weight: 700; color: #15803d; text-transform: uppercase; margin-bottom: 2px;">
+            ${escapeHtml(m.city)}, ${escapeHtml(m.stateCode)}
           </div>
           <h4 style="margin: 0 0 2px 0; font-size: 14px; font-weight: 700; line-height: 1.25; color: #0f172a;">
             ${escapeHtml(m.name)}
@@ -285,7 +288,7 @@ export function MosqueMap({
       <div
         ref={mapContainerRef}
         className="h-full w-full min-h-[380px] sm:min-h-[460px] lg:min-h-[580px] z-0"
-        aria-label="Interactive map of California mosques"
+        aria-label="Interactive map of mosques"
         role="region"
       />
 

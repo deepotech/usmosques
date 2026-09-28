@@ -5,16 +5,32 @@ import { AmenityFilterDrawer } from '@/components/search/AmenityFilterDrawer';
 
 export type SortOption = 'nearest' | 'rating' | 'name';
 
+export interface StateOption {
+  code: string;
+  name: string;
+}
+
+export interface CityOption {
+  city: string;
+  count: number;
+  stateCode?: string;
+}
+
 interface FinderFiltersProps {
   openNowOnly: boolean;
   onToggleOpenNow: () => void;
   selectedStatus: 'all' | 'verified';
   onToggleStatus: () => void;
+  selectedState: string;
+  onSelectState: (stateCode: string) => void;
+  enabledStates: StateOption[];
+  selectedRadius: number | null;
+  onSelectRadius: (radius: number | null) => void;
   sortBy: SortOption;
   onSortChange: (sort: SortOption) => void;
   hasLocation: boolean;
   selectedCity: string;
-  topCities: { city: string; count: number }[];
+  topCities: CityOption[];
   onSelectCity: (city: string) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
@@ -28,6 +44,11 @@ export function FinderFilters({
   onToggleOpenNow,
   selectedStatus,
   onToggleStatus,
+  selectedState,
+  onSelectState,
+  enabledStates,
+  selectedRadius,
+  onSelectRadius,
   sortBy,
   onSortChange,
   hasLocation,
@@ -50,6 +71,48 @@ export function FinderFilters({
             <SlidersHorizontal className="h-3.5 w-3.5 text-slate-400" />
             Filters:
           </span>
+
+          {/* State Selector */}
+          <div className="flex items-center">
+            <label htmlFor="state-filter-select" className="sr-only">
+              Filter by State
+            </label>
+            <select
+              id="state-filter-select"
+              value={selectedState}
+              onChange={e => onSelectState(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm hover:border-slate-400 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 cursor-pointer"
+            >
+              <option value="">All States (Nationwide)</option>
+              {enabledStates.map(s => (
+                <option key={s.code} value={s.code}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Distance Radius (when location is active) */}
+          {hasLocation && (
+            <div className="flex items-center">
+              <label htmlFor="radius-filter-select" className="sr-only">
+                Distance Radius
+              </label>
+              <select
+                id="radius-filter-select"
+                value={selectedRadius ?? ''}
+                onChange={e => onSelectRadius(e.target.value ? Number(e.target.value) : null)}
+                className="rounded-lg border border-brand-300 bg-brand-50 px-2.5 py-1.5 text-xs font-semibold text-brand-900 shadow-sm hover:bg-brand-100 focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600 cursor-pointer"
+              >
+                <option value="">Any distance</option>
+                <option value="5">Within 5 miles</option>
+                <option value="10">Within 10 miles</option>
+                <option value="25">Within 25 miles</option>
+                <option value="50">Within 50 miles</option>
+                <option value="100">Within 100 miles</option>
+              </select>
+            </div>
+          )}
 
           {/* Open Now */}
           <button
@@ -124,12 +187,15 @@ export function FinderFilters({
 
       {/* Quick City Filter Pills */}
       <div className="flex flex-wrap items-center gap-1.5 pt-2">
-        <span className="text-xs font-medium text-slate-400 mr-1">Popular Cities:</span>
-        {topCities.slice(0, 6).map(({ city, count }) => {
+        <span className="text-xs font-medium text-slate-400 mr-1">
+          {selectedState ? 'Cities:' : 'Popular Cities:'}
+        </span>
+        {topCities.slice(0, 8).map(({ city, count, stateCode }) => {
           const isSelected = selectedCity.toLowerCase() === city.toLowerCase();
+          const label = stateCode && !selectedState ? `${city}, ${stateCode}` : city;
           return (
             <button
-              key={city}
+              key={`${stateCode || ''}-${city}`}
               type="button"
               onClick={() => onSelectCity(isSelected ? '' : city)}
               aria-pressed={isSelected}
@@ -139,7 +205,7 @@ export function FinderFilters({
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {city} <span className="text-[10px] opacity-75">({count})</span>
+              {label} <span className="text-[10px] opacity-75">({count})</span>
             </button>
           );
         })}
@@ -150,7 +216,7 @@ export function FinderFilters({
             className="inline-flex items-center gap-0.5 text-xs text-rose-600 font-semibold hover:underline ml-1"
           >
             <X className="h-3 w-3" />
-            Reset city
+            Reset city ({selectedCity})
           </button>
         )}
       </div>

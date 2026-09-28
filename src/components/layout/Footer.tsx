@@ -27,22 +27,32 @@ export function Footer() {
 
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              Quick Links
+              State Directories
             </h3>
-            <ul className="mt-4 space-y-2 text-sm">
-              <li>
-                <Link href="/mosque-near-me" className="hover:text-white transition-colors">
-                  Mosques Near Me
-                </Link>
-              </li>
+            <ul className="mt-4 space-y-2 text-sm text-slate-400">
               <li>
                 <Link href="/mosques/california" className="hover:text-white transition-colors">
-                  California Mosques
+                  California
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-white transition-colors">
-                  Data Quality & Methodology
+                <Link href="/mosques/texas" className="hover:text-white transition-colors">
+                  Texas
+                </Link>
+              </li>
+              <li>
+                <Link href="/mosques/new-york" className="hover:text-white transition-colors">
+                  New York
+                </Link>
+              </li>
+              <li>
+                <Link href="/mosques/florida" className="hover:text-white transition-colors">
+                  Florida
+                </Link>
+              </li>
+              <li>
+                <Link href="/mosques/illinois" className="hover:text-white transition-colors">
+                  Illinois
                 </Link>
               </li>
             </ul>
@@ -50,27 +60,32 @@ export function Footer() {
 
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
-              California Hubs
+              Popular City Hubs
             </h3>
             <ul className="mt-4 space-y-2 text-sm text-slate-400">
               <li>
-                <Link href="/mosques/california/sacramento" className="hover:text-white transition-colors">
-                  Sacramento Mosques
+                <Link href="/mosques/texas/houston" className="hover:text-white transition-colors">
+                  Houston, TX
+                </Link>
+              </li>
+              <li>
+                <Link href="/mosques/new-york/brooklyn" className="hover:text-white transition-colors">
+                  Brooklyn, NY
+                </Link>
+              </li>
+              <li>
+                <Link href="/mosques/illinois/chicago" className="hover:text-white transition-colors">
+                  Chicago, IL
                 </Link>
               </li>
               <li>
                 <Link href="/mosques/california/los-angeles" className="hover:text-white transition-colors">
-                  Los Angeles Mosques
+                  Los Angeles, CA
                 </Link>
               </li>
               <li>
-                <Link href="/mosques/california/san-diego" className="hover:text-white transition-colors">
-                  San Diego Mosques
-                </Link>
-              </li>
-              <li>
-                <Link href="/mosques/california/fremont" className="hover:text-white transition-colors">
-                  Fremont Mosques
+                <Link href="/mosques/florida/tampa" className="hover:text-white transition-colors">
+                  Tampa, FL
                 </Link>
               </li>
             </ul>

@@ -10,7 +10,8 @@ import { DynamicMosqueMap } from '@/components/map/DynamicMosqueMap';
 import { FinderFilters, SortOption } from '@/components/search/FinderFilters';
 import { ViewToggle } from '@/components/search/ViewToggle';
 import { calculateHaversineDistanceMiles, formatDistance } from '@/lib/geo/distance';
-import { getMosqueOpenStatus, getTimezoneForState } from '@/lib/geo/timezone';
+import { getMosqueOpenStatus, getTimezoneForMosque } from '@/lib/geo/timezone';
+import { getEnabledStates } from '@/lib/config/state-registry';
 import { AmenityFilterState, EMPTY_AMENITY_FILTERS } from '@/types/amenity';
 import {
   matchesAmenityFilters,
@@ -21,32 +22,54 @@ import { Compass, AlertCircle, XCircle, MapPin, Navigation, ExternalLink } from 
 
 interface MosqueFinderClientProps {
   initialMosques: Mosque[];
-  topCities: { city: string; count: number }[];
+  topCities: { city: string; count: number; stateCode?: string }[];
+  enabledStates?: { code: string; name: string; slug: string }[];
   defaultQuery?: string;
+  defaultState?: string;
   defaultCity?: string;
+  defaultSort?: SortOption;
+  defaultRadius?: number | null;
+  defaultOpenNow?: boolean;
+  defaultStatus?: 'all' | 'verified';
+  autoNearMe?: boolean;
 }
 
 export function MosqueFinderClient({
   initialMosques,
   topCities,
+  enabledStates,
   defaultQuery = '',
+  defaultState = '',
   defaultCity = '',
+  defaultSort = 'rating',
+  defaultRadius = null,
+  defaultOpenNow = false,
+  defaultStatus = 'verified',
+  autoNearMe = false,
 }: MosqueFinderClientProps) {
   const [searchQuery, setSearchQuery] = useState(defaultQuery);
+  const [selectedState, setSelectedState] = useState(defaultState.toUpperCase());
   const [selectedCity, setSelectedCity] = useState(defaultCity);
+  const [selectedRadius, setSelectedRadius] = useState<number | null>(defaultRadius);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [openNowOnly, setOpenNowOnly] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'verified'>('verified');
-  const [sortBy, setSortBy] = useState<SortOption>('rating');
+  const [openNowOnly, setOpenNowOnly] = useState(defaultOpenNow);
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'verified'>(defaultStatus);
+  const [sortBy, setSortBy] = useState<SortOption>(defaultSort);
   const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [visibleCount, setVisibleCount] = useState(24);
   const [amenityFilters, setAmenityFilters] = useState<AmenityFilterState>(EMPTY_AMENITY_FILTERS);
 
+  // Active states resolved dynamically from state registry or props
+  const activeStates = useMemo(() => {
+    if (enabledStates && enabledStates.length > 0) return enabledStates;
+    return getEnabledStates().map(s => ({ code: s.code, name: s.name, slug: s.slug }));
+  }, [enabledStates]);
+
   // Reset pagination when search or filters change
   useEffect(() => {
     setVisibleCount(24);
-  }, [searchQuery, selectedCity, openNowOnly, selectedStatus, sortBy, userCoords, amenityFilters]);
+  }, [searchQuery, selectedState, selectedCity, selectedRadius, openNowOnly, selectedStatus, sortBy, userCoords, amenityFilters]);
 
   // Geolocation handlers
   const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
@@ -56,10 +79,75 @@ export function MosqueFinderClient({
 
   const handleClearLocation = useCallback(() => {
     setUserCoords(null);
+    setSelectedRadius(null);
     if (sortBy === 'nearest') {
       setSortBy('rating');
     }
   }, [sortBy]);
+
+  // Auto near-me trigger if requested via URL flag (client-side only, no coordinates in URL)
+  useEffect(() => {
+    if (autoNearMe && typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          handleLocationFound({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          });
+        },
+        () => {}
+      );
+    }
+  }, [autoNearMe, handleLocationFound]);
+
+  // Synchronize non-sensitive search parameters to URL query string (NEVER coordinates)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set('q', searchQuery.trim());
+    if (selectedState) params.set('state', selectedState);
+    if (selectedCity) params.set('city', selectedCity);
+    if (selectedRadius) params.set('radius', String(selectedRadius));
+    if (openNowOnly) params.set('openNow', 'true');
+    if (selectedStatus !== 'verified') params.set('status', selectedStatus);
+    if (sortBy !== 'rating' && sortBy !== 'nearest') params.set('sort', sortBy);
+
+    const qs = params.toString();
+    const newUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, '', newUrl);
+  }, [searchQuery, selectedState, selectedCity, selectedRadius, openNowOnly, selectedStatus, sortBy]);
+
+  // Handle state change with city scoping
+  const handleSelectState = useCallback((stateCode: string) => {
+    const norm = stateCode.trim().toUpperCase();
+    setSelectedState(norm);
+    if (selectedCity && norm) {
+      const cityExistsInState = initialMosques.some(
+        m => m.stateCode === norm && m.city.toLowerCase() === selectedCity.toLowerCase()
+      );
+      if (!cityExistsInState) {
+        setSelectedCity('');
+      }
+    }
+  }, [selectedCity, initialMosques]);
+
+  // Compute available cities scoped to the selected state or high-density nationwide
+  const scopedTopCities = useMemo(() => {
+    if (selectedState) {
+      const stateMosques = initialMosques.filter(
+        m => m.stateCode === selectedState && m.dataStatus !== 'excluded'
+      );
+      const cityMap = new Map<string, number>();
+      for (const m of stateMosques) {
+        cityMap.set(m.city, (cityMap.get(m.city) || 0) + 1);
+      }
+      return Array.from(cityMap.entries())
+        .map(([city, count]) => ({ city, count, stateCode: selectedState }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    }
+    return topCities;
+  }, [initialMosques, selectedState, topCities]);
 
   // Filter and sort mosques pipeline
   const filteredMosques = useMemo(() => {
@@ -71,6 +159,11 @@ export function MosqueFinderClient({
     // Status filter
     if (selectedStatus === 'verified') {
       result = result.filter(m => m.dataStatus === 'verified');
+    }
+
+    // State filter (Nationwide when empty)
+    if (selectedState) {
+      result = result.filter(m => m.stateCode === selectedState);
     }
 
     // City quick filter
@@ -88,6 +181,8 @@ export function MosqueFinderClient({
           m =>
             m.name.toLowerCase().includes(q) ||
             m.city.toLowerCase().includes(q) ||
+            m.state.toLowerCase().includes(q) ||
+            m.stateCode.toLowerCase() === q ||
             m.address.toLowerCase().includes(q) ||
             (m.postalCode && m.postalCode.includes(q)) ||
             m.categories.some(c => c.toLowerCase().includes(q))
@@ -95,10 +190,10 @@ export function MosqueFinderClient({
       }
     }
 
-    // Open Now filter (timezone-aware)
+    // Open Now filter (timezone-aware with location-aware coordinate resolver)
     if (openNowOnly) {
       result = result.filter(m => {
-        const tz = getTimezoneForState(m.stateCode, m.state);
+        const tz = getTimezoneForMosque(m);
         const status = getMosqueOpenStatus(m.openingHours, tz);
         return status.state === 'open' || status.state === '24hours';
       });
@@ -120,6 +215,11 @@ export function MosqueFinderClient({
           m.longitude
         ),
       }));
+
+      // Radius filter (5, 10, 25, 50, 100 miles)
+      if (typeof selectedRadius === 'number' && selectedRadius > 0) {
+        result = result.filter(m => typeof m.distanceMiles === 'number' && m.distanceMiles <= selectedRadius);
+      }
     }
 
     // Sort order
@@ -142,7 +242,9 @@ export function MosqueFinderClient({
   }, [
     initialMosques,
     searchQuery,
+    selectedState,
     selectedCity,
+    selectedRadius,
     userCoords,
     openNowOnly,
     selectedStatus,
@@ -204,7 +306,9 @@ export function MosqueFinderClient({
 
   const handleClearAllFilters = useCallback(() => {
     setSearchQuery('');
+    setSelectedState('');
     setSelectedCity('');
+    setSelectedRadius(null);
     setOpenNowOnly(false);
     setSelectedStatus('verified');
     setUserCoords(null);
@@ -215,7 +319,9 @@ export function MosqueFinderClient({
 
   const hasActiveFilters = Boolean(
     searchQuery ||
+      selectedState ||
       selectedCity ||
+      selectedRadius !== null ||
       openNowOnly ||
       selectedStatus !== 'verified' ||
       userCoords ||
@@ -252,6 +358,7 @@ export function MosqueFinderClient({
               <Compass className="h-4 w-4 text-brand-700 animate-spin-slow flex-shrink-0" />
               <span>
                 Sorted by nearest to your GPS coordinates ({userCoords.lat.toFixed(3)}, {userCoords.lng.toFixed(3)})
+                {selectedRadius ? ` • Filtered to within ${selectedRadius} miles` : ''}
               </span>
             </div>
             <button
@@ -271,11 +378,16 @@ export function MosqueFinderClient({
           onToggleOpenNow={() => setOpenNowOnly(!openNowOnly)}
           selectedStatus={selectedStatus}
           onToggleStatus={() => setSelectedStatus(selectedStatus === 'verified' ? 'all' : 'verified')}
+          selectedState={selectedState}
+          onSelectState={handleSelectState}
+          enabledStates={activeStates}
+          selectedRadius={selectedRadius}
+          onSelectRadius={setSelectedRadius}
           sortBy={sortBy}
           onSortChange={setSortBy}
           hasLocation={Boolean(userCoords)}
           selectedCity={selectedCity}
-          topCities={topCities}
+          topCities={scopedTopCities}
           onSelectCity={setSelectedCity}
           onClearFilters={handleClearAllFilters}
           hasActiveFilters={hasActiveFilters}
@@ -290,14 +402,27 @@ export function MosqueFinderClient({
         <div>
           <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             {userCoords
-              ? 'Mosques Nearest to You'
+              ? selectedRadius
+                ? `Mosques Within ${selectedRadius} Miles of You`
+                : 'Mosques Nearest to You'
+              : selectedCity && selectedState
+              ? `Mosques in ${selectedCity}, ${selectedState}`
               : selectedCity
-              ? `Mosques in ${selectedCity}, California`
-              : 'California Mosques Directory'}
+              ? `Mosques in ${selectedCity}`
+              : selectedState
+              ? `Mosques in ${activeStates.find(s => s.code === selectedState)?.name || selectedState}`
+              : 'U.S. Mosque Directory (Nationwide)'}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             Showing <strong className="text-slate-800">{filteredMosques.length}</strong> {filteredMosques.length === 1 ? 'mosque' : 'mosques'}
-            {userCoords ? ' sorted by distance' : ` • ${selectedStatus === 'verified' ? 'Verified listings' : 'All listings'}`}
+            {userCoords
+              ? selectedRadius
+                ? ` • within ${selectedRadius} miles, sorted by distance`
+                : ' • sorted by distance'
+              : selectedState
+              ? ` in ${activeStates.find(s => s.code === selectedState)?.name || selectedState}`
+              : ' across active U.S. states'}
+            {` • ${selectedStatus === 'verified' ? 'Verified listings' : 'All listings'}`}
           </p>
         </div>
 
@@ -409,7 +534,7 @@ export function MosqueFinderClient({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-800">
-                      {selectedMosque.city}, California
+                      {selectedMosque.city}, {selectedMosque.stateCode}
                     </span>
                     <h4 className="text-sm font-bold text-slate-900 leading-snug">
                       {selectedMosque.name}

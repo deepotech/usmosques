@@ -2,13 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Locate, Loader2 } from 'lucide-react';
+import { Search, Locate } from 'lucide-react';
 
 export function HomeHeroSearch() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,31 +18,8 @@ export function HomeHeroSearch() {
   };
 
   const handleUseLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
-      return;
-    }
-
-    setIsLocating(true);
-    setLocationError(null);
-
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setIsLocating(false);
-        router.push(
-          `/mosque-near-me?lat=${pos.coords.latitude.toFixed(6)}&lng=${pos.coords.longitude.toFixed(6)}`
-        );
-      },
-      err => {
-        setIsLocating(false);
-        if (err.code === err.PERMISSION_DENIED) {
-          setLocationError('Location permission denied. Please enter your city or ZIP below.');
-        } else {
-          setLocationError('Unable to retrieve location. Please search by city or ZIP.');
-        }
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+    // Preserve privacy: navigate with nearMe flag to trigger in-memory client-side geolocation
+    router.push('/mosque-near-me?nearMe=true');
   };
 
   return (
@@ -75,22 +50,11 @@ export function HomeHeroSearch() {
         <button
           type="button"
           onClick={handleUseLocation}
-          disabled={isLocating}
           className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 hover:text-brand-800 hover:border-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 transition-all"
         >
-          {isLocating ? (
-            <Loader2 className="h-4 w-4 animate-spin text-brand-600" />
-          ) : (
-            <Locate className="h-4 w-4 text-brand-600" />
-          )}
-          <span>{isLocating ? 'Detecting your location…' : 'Use My Current Location'}</span>
+          <Locate className="h-4 w-4 text-brand-600" />
+          <span>Use My Current Location</span>
         </button>
-
-        {locationError && (
-          <p className="mt-2 text-xs text-rose-600 font-medium" role="alert">
-            {locationError}
-          </p>
-        )}
       </div>
     </div>
   );

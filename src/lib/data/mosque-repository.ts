@@ -3,7 +3,7 @@ import { IStateMosqueProvider } from '@/types/state';
 import { californiaProvider } from './california-provider';
 import { GenericStateProvider } from './state-provider';
 import { calculateHaversineDistanceMiles } from '../geo/distance';
-import { getMosqueOpenStatus, getTimezoneForState } from '../geo/timezone';
+import { getMosqueOpenStatus, getTimezoneForMosque } from '../geo/timezone';
 import { normalizeStateCode, isStateEnabled } from '../config/state-registry';
 
 export interface IMosqueRepository {
@@ -26,6 +26,8 @@ export class MosqueRepository implements IMosqueRepository {
     }
     this.registerProvider(new GenericStateProvider('TX'));
     this.registerProvider(new GenericStateProvider('NY'));
+    this.registerProvider(new GenericStateProvider('FL'));
+    this.registerProvider(new GenericStateProvider('IL'));
   }
 
   /**
@@ -135,7 +137,7 @@ export class MosqueRepository implements IMosqueRepository {
     // 6. Open Now filter if requested
     if (params.openNow) {
       list = list.filter(m => {
-        const tz = getTimezoneForState(m.stateCode, m.state);
+        const tz = getTimezoneForMosque(m);
         const status = getMosqueOpenStatus(m.openingHours, tz);
         return status.state === 'open' || status.state === '24hours';
       });

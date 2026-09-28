@@ -125,6 +125,8 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
             <div className="flex flex-wrap items-center gap-2">
               <MosqueStatusBadge
                 openingHours={mosque.openingHours}
+                latitude={mosque.latitude}
+                longitude={mosque.longitude}
                 stateCode={mosque.stateCode}
                 state={mosque.state}
               />
@@ -290,7 +292,7 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
         <section className="pt-8 border-t border-slate-200 space-y-6">
           <div>
             <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-              Nearby Mosques in California
+              Nearby Mosques in {mosque.state}
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               Other masajid located near {mosque.name}

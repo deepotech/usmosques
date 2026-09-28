@@ -16,6 +16,39 @@ export function getTimezoneForState(stateCode?: string, state?: string): string 
 }
 
 /**
+ * Returns location-aware IANA timezone.
+ * Resolves multi-timezone states (e.g. Texas El Paso in Mountain Time) when coordinates are available,
+ * falling back to the state primary timezone.
+ */
+export function getTimezoneForLocation(
+  lat?: number,
+  lng?: number,
+  stateCode?: string,
+  state?: string
+): string {
+  const normState = (stateCode || state || '').trim().toUpperCase();
+
+  // Texas: El Paso & Hudspeth counties (west of -104.85 longitude) observe Mountain Time
+  if ((normState === 'TX' || normState === 'TEXAS') && typeof lng === 'number' && lng < -104.85) {
+    return 'America/Denver';
+  }
+
+  return getTimezoneForState(stateCode, state);
+}
+
+/**
+ * Returns location-aware IANA timezone for a specific mosque entity.
+ */
+export function getTimezoneForMosque(mosque: {
+  latitude?: number;
+  longitude?: number;
+  stateCode?: string;
+  state?: string;
+}): string {
+  return getTimezoneForLocation(mosque.latitude, mosque.longitude, mosque.stateCode, mosque.state);
+}
+
+/**
  * Parses time string like "5 AM", "10:05 PM", "12:30", "7" into minutes from midnight (0..1439)
  */
 function parseTimeStringToMinutes(timeStr: string, defaultPeriod?: 'AM' | 'PM'): number | null {

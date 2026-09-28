@@ -76,11 +76,11 @@ export const STATE_REGISTRY: Record<string, StateConfig> = {
     slug: 'florida',
     timezone: 'America/New_York',
     timezones: ['America/New_York', 'America/Chicago'],
-    enabled: false,
-    finderEnabled: false,
-    seoEnabled: false,
-    datasetPath: 'Florida – about 200 mosques.json',
-    bounds: { minLat: 24.5, maxLat: 31.1, minLng: -87.7, maxLng: -79.9 },
+    enabled: true, // Activated in Phase 3C after dataset validation
+    finderEnabled: true,
+    seoEnabled: true,
+    datasetPath: 'data/raw/florida.json',
+    bounds: { minLat: 24.4, maxLat: 31.0, minLng: -87.4, maxLng: -79.9 },
   },
   IL: {
     code: 'IL',
@@ -88,11 +88,11 @@ export const STATE_REGISTRY: Record<string, StateConfig> = {
     slug: 'illinois',
     timezone: 'America/Chicago',
     timezones: ['America/Chicago'],
-    enabled: false,
-    finderEnabled: false,
-    seoEnabled: false,
-    datasetPath: 'Illinois – approximately 180 mosques.json',
-    bounds: { minLat: 36.9, maxLat: 42.6, minLng: -91.6, maxLng: -87.0 },
+    enabled: true, // Activated in Phase 3C after dataset validation
+    finderEnabled: true,
+    seoEnabled: true,
+    datasetPath: 'data/raw/illinois.json',
+    bounds: { minLat: 37.6, maxLat: 42.5, minLng: -91.5, maxLng: -87.5 },
   },
   CT: {
     code: 'CT',

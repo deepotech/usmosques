@@ -15,16 +15,19 @@ export default async function HomePage() {
     enabledStates.map(async s => {
       const mosques = await mosqueRepository.getMosquesByState(s.code);
       const publishable = mosques.filter(m => m.dataStatus !== 'excluded');
+      const verified = mosques.filter(m => m.dataStatus === 'verified');
       const cities = await cityRepository.getAllCities(s.code);
       return {
         state: s,
         mosqueCount: publishable.length,
+        verifiedCount: verified.length,
         cityCount: cities.length,
       };
     })
   );
 
-  const totalVerifiedCount = stateSummaries.reduce((sum, item) => sum + item.mosqueCount, 0);
+  const totalListingsCount = stateSummaries.reduce((sum, item) => sum + item.mosqueCount, 0);
+  const totalVerifiedCount = stateSummaries.reduce((sum, item) => sum + item.verifiedCount, 0);
 
   // Top cities from across enabled states for quick discovery
   const allEligibleCities = (
@@ -45,7 +48,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-brand-100/80 px-3.5 py-1 text-xs font-semibold text-brand-900 mb-6 ring-1 ring-inset ring-brand-300">
             <span className="h-1.5 w-1.5 rounded-full bg-brand-700" />
-            Verified U.S. Mosque Directory • California, Texas &amp; New York
+            Verified U.S. Mosque Directory • {enabledStates.map(s => s.name).join(', ')}
           </div>
 
           <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
@@ -62,7 +65,7 @@ export default async function HomePage() {
 
           <div className="mt-10 flex flex-wrap justify-center items-center gap-6 text-xs text-slate-500 font-medium">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-brand-600" /> {totalVerifiedCount} Verified Mosque Locations
+              <CheckCircle2 className="h-4 w-4 text-brand-600" /> {totalListingsCount.toLocaleString()} Mosque Locations ({totalVerifiedCount.toLocaleString()} Verified)
             </span>
             <span className="flex items-center gap-1.5">
               <Navigation className="h-4 w-4 text-brand-600" /> Instant GPS Distance &amp; Directions
@@ -188,7 +191,7 @@ export default async function HomePage() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {topCities.map(c => {
-              const stateSlug = c.stateCode === 'CA' ? 'california' : c.stateCode === 'TX' ? 'texas' : 'new-york';
+              const stateSlug = enabledStates.find(s => s.code === c.stateCode)?.slug ?? c.stateCode.toLowerCase();
               return (
                 <Link
                   key={`${c.stateCode}-${c.slug}`}
@@ -226,7 +229,7 @@ export default async function HomePage() {
             href="/mosque-near-me"
             className="text-sm font-semibold text-brand-700 hover:text-brand-800 hover:underline"
           >
-            Search all {totalVerifiedCount} mosques &rarr;
+            Search all {totalListingsCount.toLocaleString()} mosques &rarr;
           </Link>
         </div>
 
@@ -242,7 +245,7 @@ export default async function HomePage() {
         <div className="flex items-center gap-2 text-xs text-slate-500 pt-8 border-t border-slate-200">
           <ShieldCheck className="h-4 w-4 text-brand-700 flex-shrink-0" />
           <span>
-            Directory figures reflect authentic public listings across California, Texas, and New York. Excluded non-mosque businesses are filtered from all counts.
+            Directory figures reflect authentic public listings across {enabledStates.map(s => s.name).join(', ')}. Excluded non-mosque businesses are filtered from all counts.
           </span>
         </div>
       </div>

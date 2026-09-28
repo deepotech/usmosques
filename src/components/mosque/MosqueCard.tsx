@@ -39,6 +39,8 @@ export function MosqueCard({
           <div className="flex items-center gap-2">
             <MosqueStatusBadge
               openingHours={mosque.openingHours}
+              latitude={mosque.latitude}
+              longitude={mosque.longitude}
               stateCode={mosque.stateCode}
               state={mosque.state}
             />
