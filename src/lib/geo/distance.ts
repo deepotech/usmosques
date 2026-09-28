@@ -54,3 +54,5 @@ export function formatDistanceMiles(distance?: number | null): string | null {
   }
   return `${Math.round(distance)} mi`;
 }
+
+export const formatDistance = formatDistanceMiles;

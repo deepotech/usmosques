@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import Link from 'next/link';
 import { Mosque } from '@/types/mosque';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
 import { SearchBar } from '@/components/search/SearchBar';
 import { LocationButton } from '@/components/search/LocationButton';
-import { calculateHaversineDistanceMiles } from '@/lib/geo/distance';
+import { DynamicMosqueMap } from '@/components/map/DynamicMosqueMap';
+import { FinderFilters, SortOption } from '@/components/search/FinderFilters';
+import { ViewToggle } from '@/components/search/ViewToggle';
+import { calculateHaversineDistanceMiles, formatDistance } from '@/lib/geo/distance';
 import { getMosqueOpenStatus, getTimezoneForState } from '@/lib/geo/timezone';
-import { SlidersHorizontal, Compass, AlertCircle, XCircle } from 'lucide-react';
+import { Compass, AlertCircle, XCircle, MapPin, Navigation, ExternalLink } from 'lucide-react';
 
 interface MosqueFinderClientProps {
   initialMosques: Mosque[];
@@ -27,20 +31,28 @@ export function MosqueFinderClient({
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [openNowOnly, setOpenNowOnly] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'verified'>('verified');
+  const [sortBy, setSortBy] = useState<SortOption>('rating');
+  const [selectedMosqueId, setSelectedMosqueId] = useState<string | null>(null);
+  const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
 
-  const handleLocationFound = (coords: { lat: number; lng: number }) => {
+  // Geolocation handlers
+  const handleLocationFound = useCallback((coords: { lat: number; lng: number }) => {
     setUserCoords(coords);
-  };
+    setSortBy('nearest');
+  }, []);
 
-  const handleClearLocation = () => {
+  const handleClearLocation = useCallback(() => {
     setUserCoords(null);
-  };
+    if (sortBy === 'nearest') {
+      setSortBy('rating');
+    }
+  }, [sortBy]);
 
-  // Filter and sort mosques
+  // Filter and sort mosques pipeline
   const filteredMosques = useMemo(() => {
     let result = [...initialMosques];
 
-    // Filter out excluded records
+    // Filter out excluded records (preserves repository classification)
     result = result.filter(m => m.dataStatus !== 'excluded');
 
     // Status filter
@@ -53,10 +65,9 @@ export function MosqueFinderClient({
       result = result.filter(m => m.city.toLowerCase() === selectedCity.toLowerCase());
     }
 
-    // Search query filter
+    // Search query filter (ZIP / City / Name / Category / Address)
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
-      // Check if 5-digit zip
       if (/^\d{5}$/.test(q)) {
         result = result.filter(m => m.postalCode && m.postalCode.startsWith(q));
       } else {
@@ -71,7 +82,7 @@ export function MosqueFinderClient({
       }
     }
 
-    // Open Now filter
+    // Open Now filter (timezone-aware)
     if (openNowOnly) {
       result = result.filter(m => {
         const tz = getTimezoneForState(m.stateCode, m.state);
@@ -91,26 +102,80 @@ export function MosqueFinderClient({
           m.longitude
         ),
       }));
+    }
 
-      // Sort by nearest distance
-      result.sort((a, b) => (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity));
-    } else {
-      // Default sort: highest review count / rating, then name
-      result.sort((a, b) => {
+    // Sort order
+    result.sort((a, b) => {
+      if (sortBy === 'nearest' && userCoords) {
+        return (a.distanceMiles ?? Infinity) - (b.distanceMiles ?? Infinity);
+      }
+      if (sortBy === 'rating') {
         const reviewDiff = (b.reviewCount || 0) - (a.reviewCount || 0);
         if (reviewDiff !== 0) return reviewDiff;
         return a.name.localeCompare(b.name);
-      });
-    }
+      }
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
 
     return result;
-  }, [initialMosques, searchQuery, selectedCity, userCoords, openNowOnly, selectedStatus]);
+  }, [initialMosques, searchQuery, selectedCity, userCoords, openNowOnly, selectedStatus, sortBy]);
+
+  // Ensure selected mosque remains valid when filtered results change
+  useEffect(() => {
+    if (selectedMosqueId && !filteredMosques.some(m => m.id === selectedMosqueId)) {
+      setSelectedMosqueId(null);
+    }
+  }, [filteredMosques, selectedMosqueId]);
+
+  // Marker selection callback: highlights card and scrolls into view on desktop
+  const handleSelectMosque = useCallback((id: string) => {
+    setSelectedMosqueId(id);
+
+    // Gently scroll card into view if in list mode
+    if (typeof window !== 'undefined') {
+      const cardEl = document.getElementById(`mosque-card-${id}`);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, []);
+
+  const handleCardClick = useCallback((id: string) => {
+    setSelectedMosqueId(prev => (prev === id ? null : id));
+  }, []);
+
+  const handleViewOnMapMobile = useCallback((id: string) => {
+    setSelectedMosqueId(id);
+    setMobileViewMode('map');
+  }, []);
+
+  const handleClearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedCity('');
+    setOpenNowOnly(false);
+    setSelectedStatus('verified');
+    setUserCoords(null);
+    setSortBy('rating');
+    setSelectedMosqueId(null);
+  }, []);
+
+  const hasActiveFilters = Boolean(
+    searchQuery || selectedCity || openNowOnly || selectedStatus !== 'verified' || userCoords
+  );
+
+  const selectedMosque = useMemo(
+    () => filteredMosques.find(m => m.id === selectedMosqueId) || null,
+    [filteredMosques, selectedMosqueId]
+  );
 
   return (
-    <div className="space-y-8">
-      {/* Controls Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+    <div className="space-y-6">
+      {/* Search & Location Bar */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 items-center">
           <div className="md:col-span-8">
             <SearchBar
               value={searchQuery}
@@ -126,17 +191,17 @@ export function MosqueFinderClient({
 
         {/* User Location active banner */}
         {userCoords && (
-          <div className="mt-4 flex items-center justify-between rounded-lg bg-brand-50 border border-brand-200 px-4 py-2.5 text-xs text-brand-900">
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-brand-50 border border-brand-200 px-3.5 py-2 text-xs text-brand-900">
             <div className="flex items-center gap-2">
-              <Compass className="h-4 w-4 text-brand-700 animate-spin-slow" />
+              <Compass className="h-4 w-4 text-brand-700 animate-spin-slow flex-shrink-0" />
               <span>
-                Sorted by nearest to your current location (lat: {userCoords.lat.toFixed(3)}, lng: {userCoords.lng.toFixed(3)})
+                Sorted by nearest to your GPS coordinates ({userCoords.lat.toFixed(3)}, {userCoords.lng.toFixed(3)})
               </span>
             </div>
             <button
               type="button"
               onClick={handleClearLocation}
-              className="inline-flex items-center gap-1 font-semibold text-brand-800 hover:text-brand-950 underline focus:outline-none"
+              className="inline-flex items-center gap-1 font-semibold text-brand-800 hover:text-brand-950 underline focus:outline-none ml-2 flex-shrink-0"
             >
               <XCircle className="h-3.5 w-3.5" />
               Clear location
@@ -144,119 +209,184 @@ export function MosqueFinderClient({
           </div>
         )}
 
-        {/* Secondary Filters row */}
-        <div className="mt-5 pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-              Filter:
-            </span>
-
-            {/* Open Now toggle */}
-            <button
-              type="button"
-              onClick={() => setOpenNowOnly(!openNowOnly)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                openNowOnly
-                  ? 'bg-emerald-700 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              Open Now
-            </button>
-
-            {/* Verified toggle */}
-            <button
-              type="button"
-              onClick={() =>
-                setSelectedStatus(selectedStatus === 'verified' ? 'all' : 'verified')
-              }
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
-                selectedStatus === 'verified'
-                  ? 'bg-brand-800 text-white shadow-sm'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {selectedStatus === 'verified' ? 'Verified Only' : 'All Listings'}
-            </button>
-          </div>
-
-          {/* Quick city selector pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-medium text-slate-400">Popular:</span>
-            {topCities.slice(0, 5).map(({ city, count }) => (
-              <button
-                key={city}
-                type="button"
-                onClick={() => setSelectedCity(selectedCity === city ? '' : city)}
-                className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                  selectedCity.toLowerCase() === city.toLowerCase()
-                    ? 'bg-slate-900 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {city} ({count})
-              </button>
-            ))}
-            {selectedCity && (
-              <button
-                type="button"
-                onClick={() => setSelectedCity('')}
-                className="text-xs text-rose-600 font-semibold hover:underline ml-1"
-              >
-                Reset city
-              </button>
-            )}
-          </div>
-        </div>
+        {/* Filters and sorting */}
+        <FinderFilters
+          openNowOnly={openNowOnly}
+          onToggleOpenNow={() => setOpenNowOnly(!openNowOnly)}
+          selectedStatus={selectedStatus}
+          onToggleStatus={() => setSelectedStatus(selectedStatus === 'verified' ? 'all' : 'verified')}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          hasLocation={Boolean(userCoords)}
+          selectedCity={selectedCity}
+          topCities={topCities}
+          onSelectCity={setSelectedCity}
+          onClearFilters={handleClearAllFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
       </div>
 
-      {/* Results Header */}
-      <div className="flex items-center justify-between px-1">
+      {/* Discovery Header & Mobile View Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             {userCoords
               ? 'Mosques Nearest to You'
               : selectedCity
               ? `Mosques in ${selectedCity}, California`
-              : 'All Verified Mosques in California'}
+              : 'California Mosques Directory'}
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Showing {filteredMosques.length} {filteredMosques.length === 1 ? 'mosque' : 'mosques'}
-            {userCoords ? ' sorted by distance' : ''}
+            Showing <strong className="text-slate-800">{filteredMosques.length}</strong> {filteredMosques.length === 1 ? 'mosque' : 'mosques'}
+            {userCoords ? ' sorted by distance' : ` • ${selectedStatus === 'verified' ? 'Verified listings' : 'All listings'}`}
           </p>
+        </div>
+
+        {/* Mobile View Switcher (Hidden on Desktop) */}
+        <div className="lg:hidden flex items-center justify-end">
+          <ViewToggle
+            mode={mobileViewMode}
+            onChange={setMobileViewMode}
+            resultCount={filteredMosques.length}
+          />
         </div>
       </div>
 
-      {/* Results Grid or Empty State */}
+      {/* Main Discover Layout: Split Map & List */}
       {filteredMosques.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredMosques.map((mosque, idx) => (
-            <MosqueCard key={mosque.id} mosque={mosque} priority={idx < 6} />
-          ))}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* Mosque List Column */}
+          <div
+            className={`space-y-4 lg:col-span-7 xl:col-span-7 ${
+              mobileViewMode === 'map' ? 'hidden lg:block' : 'block'
+            }`}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredMosques.map((mosque, idx) => (
+                <div key={mosque.id} className="flex flex-col">
+                  <MosqueCard
+                    mosque={mosque}
+                    priority={idx < 4}
+                    isSelected={mosque.id === selectedMosqueId}
+                    onSelect={() => handleCardClick(mosque.id)}
+                  />
+                  {/* Mobile-only action to switch to map */}
+                  <div className="lg:hidden mt-1 px-1">
+                    <button
+                      type="button"
+                      onClick={() => handleViewOnMapMobile(mosque.id)}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-700 hover:text-brand-900"
+                    >
+                      <MapPin className="h-3 w-3" />
+                      Show on map &rarr;
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Interactive Map Column */}
+          <div
+            className={`lg:col-span-5 xl:col-span-5 lg:sticky lg:top-20 space-y-3 ${
+              mobileViewMode === 'list' ? 'hidden lg:block' : 'block'
+            }`}
+          >
+            <DynamicMosqueMap
+              mosques={filteredMosques}
+              selectedMosqueId={selectedMosqueId}
+              onSelectMosque={handleSelectMosque}
+              userCoords={userCoords}
+              onLocateUser={() => {
+                if (typeof window !== 'undefined' && navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition(
+                    pos => {
+                      handleLocationFound({
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                      });
+                    },
+                    () => {}
+                  );
+                }
+              }}
+            />
+
+            {/* Mobile Floating Selected Card Preview */}
+            {selectedMosque && (
+              <div className="lg:hidden rounded-xl border border-brand-200 bg-white p-4 shadow-lg animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-brand-800">
+                      {selectedMosque.city}, California
+                    </span>
+                    <h4 className="text-sm font-bold text-slate-900 leading-snug">
+                      {selectedMosque.name}
+                    </h4>
+                    <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
+                      {selectedMosque.address}
+                    </p>
+                  </div>
+                  {typeof selectedMosque.distanceMiles === 'number' && (
+                    <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-bold text-brand-800 border border-brand-200">
+                      {formatDistance(selectedMosque.distanceMiles)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-100">
+                  <Link
+                    href={`/mosque/${selectedMosque.slug}`}
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-800"
+                  >
+                    View Details
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
+                      selectedMosque.address
+                    )}&destination_place_id=${selectedMosque.latitude},${selectedMosque.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Navigation className="h-3 w-3 text-brand-700" />
+                    Directions
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       ) : (
+        /* Empty Results State */
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
             <AlertCircle className="h-6 w-6" />
           </div>
-          <h3 className="mt-4 text-base font-semibold text-slate-900">No mosques found</h3>
-          <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
-            We couldn&apos;t find any mosques matching your filters. Try clearing your search query or selecting a different city.
+          <h3 className="mt-4 text-base font-bold text-slate-900">No mosques match your criteria</h3>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500 max-w-sm mx-auto">
+            {searchQuery
+              ? `We couldn't find any mosques matching "${searchQuery}". Try searching for another city, ZIP code, or clearing your active filters.`
+              : 'No mosques matched the active filters. Try toggling "Open Now" off or clearing city selections.'}
           </p>
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <button
               type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCity('');
-                setOpenNowOnly(false);
-                setSelectedStatus('verified');
-              }}
-              className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
+              onClick={handleClearAllFilters}
+              className="rounded-lg bg-brand-700 px-4 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors shadow-sm"
             >
-              Reset all filters
+              Reset All Filters
             </button>
+            {userCoords && (
+              <button
+                type="button"
+                onClick={handleClearLocation}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Clear Location
+              </button>
+            )}
           </div>
         </div>
       )}

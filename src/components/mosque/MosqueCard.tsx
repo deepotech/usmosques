@@ -11,11 +11,27 @@ import { MapPin, Building2, CheckCircle2 } from 'lucide-react';
 interface MosqueCardProps {
   mosque: Mosque;
   priority?: boolean;
+  isSelected?: boolean;
+  onSelect?: () => void;
 }
 
-export function MosqueCard({ mosque, priority = false }: MosqueCardProps) {
+export function MosqueCard({
+  mosque,
+  priority = false,
+  isSelected = false,
+  onSelect,
+}: MosqueCardProps) {
   return (
-    <article className="group relative flex flex-col justify-between overflow-hidden rounded-xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:border-slate-300 hover:shadow-md">
+    <article
+      id={`mosque-card-${mosque.id}`}
+      onClick={onSelect}
+      data-selected={isSelected}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border p-5 transition-all ${
+        isSelected
+          ? 'border-brand-700 ring-2 ring-brand-700/80 bg-brand-50/30 shadow-md'
+          : 'border-slate-200/90 bg-white hover:border-slate-300 hover:shadow-md'
+      }`}
+    >
       <div>
         {/* Header row: Status badges & Distance */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
@@ -29,6 +45,11 @@ export function MosqueCard({ mosque, priority = false }: MosqueCardProps) {
               <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-400/20" title="Verified Islamic center or mosque listing">
                 <CheckCircle2 className="h-3 w-3 text-brand-600" />
                 Verified
+              </span>
+            )}
+            {isSelected && (
+              <span className="inline-flex items-center rounded-full bg-brand-700 text-white px-2 py-0.5 text-[10px] font-bold shadow-sm">
+                Selected on map
               </span>
             )}
           </div>
