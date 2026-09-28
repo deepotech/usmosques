@@ -1,22 +1,18 @@
 import { MosqueOpeningHourDay, OpenStatusResult } from '@/types/mosque';
+import { getStateConfig, getDefaultState } from '@/lib/config/state-registry';
 
 /**
- * Returns IANA timezone for a US state
+ * Returns IANA timezone for a US state dynamically from State Registry
  */
 export function getTimezoneForState(stateCode?: string, state?: string): string {
-  const code = (stateCode || '').toUpperCase().trim();
-  const name = (state || '').toLowerCase().trim();
+  if (stateCode || state) {
+    const config = getStateConfig(stateCode || state || '');
+    if (config) {
+      return config.timezone;
+    }
+  }
 
-  if (code === 'CA' || name === 'california') return 'America/Los_Angeles';
-  if (code === 'NY' || name === 'new york') return 'America/New_York';
-  if (code === 'CT' || name === 'connecticut') return 'America/New_York';
-  if (code === 'FL' || name === 'florida') return 'America/New_York';
-  if (code === 'SC' || name === 'south carolina') return 'America/New_York';
-  if (code === 'IL' || name === 'illinois') return 'America/Chicago';
-  if (code === 'TX' || name === 'texas') return 'America/Chicago';
-  if (code === 'IN' || name === 'indiana') return 'America/Indiana/Indianapolis';
-
-  return 'America/Los_Angeles'; // Default fallback for initial California deployment
+  return getDefaultState().timezone;
 }
 
 /**
@@ -72,16 +68,18 @@ function parseSlot(slot: string): { startMinutes: number; endMinutes: number } |
  */
 export function getMosqueOpenStatus(
   openingHours?: MosqueOpeningHourDay[] | null,
-  timezone = 'America/Los_Angeles',
+  timezone?: string,
   customDate = new Date()
 ): OpenStatusResult {
+  const resolvedTimezone = timezone || getDefaultState().timezone;
+
   if (!openingHours || openingHours.length === 0) {
     return { state: 'unknown', label: 'Hours not listed' };
   }
 
   // Get current day and time in mosque local timezone
   const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone,
+    timeZone: resolvedTimezone,
     weekday: 'long',
     hour: 'numeric',
     minute: 'numeric',

@@ -1,10 +1,12 @@
 import { MetadataRoute } from 'next';
-import { californiaProvider } from '@/lib/data/california-provider';
+import { getEnabledStates } from '@/lib/config/state-registry';
 import { cityRepository } from '@/lib/data/city-repository';
+import { mosqueRepository } from '@/lib/data/mosque-repository';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com';
   const lastModified = new Date();
+  const enabledStates = getEnabledStates();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -20,12 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/mosques/california`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
       url: `${baseUrl}/about`,
       lastModified,
       changeFrequency: 'monthly',
@@ -33,29 +29,44 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Dynamic state hub routes for enabled states only (e.g. /mosques/california)
+  const stateRoutes: MetadataRoute.Sitemap = enabledStates.map(s => ({
+    url: `${baseUrl}/mosques/${s.slug}`,
+    lastModified,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
   try {
-    const eligibleCities = await cityRepository.getEligibleCities();
-    const cityRoutes: MetadataRoute.Sitemap = eligibleCities.map(c => ({
-      url: `${baseUrl}/mosques/california/${c.slug}`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    }));
+    const cityRoutes: MetadataRoute.Sitemap = [];
+    const mosqueRoutes: MetadataRoute.Sitemap = [];
 
-    const mosques = await californiaProvider.getAll();
-    const verifiedMosques = mosques.filter(m => m.dataStatus === 'verified');
+    for (const state of enabledStates) {
+      const eligibleCities = await cityRepository.getEligibleCities(state.code);
+      cityRoutes.push(
+        ...eligibleCities.map(c => ({
+          url: `${baseUrl}/mosques/${state.slug}/${c.slug}`,
+          lastModified,
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        }))
+      );
 
-    const mosqueRoutes: MetadataRoute.Sitemap = verifiedMosques.map(m => ({
-      url: `${baseUrl}/mosque/${m.slug}`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.7,
-    }));
+      const mosques = await mosqueRepository.getMosquesByState(state.code);
+      const verifiedMosques = mosques.filter(m => m.dataStatus === 'verified');
+      mosqueRoutes.push(
+        ...verifiedMosques.map(m => ({
+          url: `${baseUrl}/mosque/${m.slug}`,
+          lastModified,
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }))
+      );
+    }
 
-    return [...staticRoutes, ...cityRoutes, ...mosqueRoutes];
+    return [...staticRoutes, ...stateRoutes, ...cityRoutes, ...mosqueRoutes];
   } catch (e) {
     console.error('Failed generating dynamic sitemap routes:', e);
-    return staticRoutes;
+    return [...staticRoutes, ...stateRoutes];
   }
 }
-

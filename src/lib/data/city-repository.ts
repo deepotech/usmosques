@@ -1,23 +1,68 @@
 import { Mosque } from '@/types/mosque';
 import { CitySummary, CityTier, CityCoordinates } from '@/types/city';
+import { IStateMosqueProvider } from '@/types/state';
 import { californiaProvider } from './california-provider';
+import { mosqueRepository } from './mosque-repository';
 import { slugify } from './normalization';
 import { CitySeoConfig, DEFAULT_CITY_SEO_CONFIG, isCityEligibleForSeo } from '../config/city-seo';
-
-let cachedCities: CitySummary[] | null = null;
+import { normalizeStateCode } from '../config/state-registry';
 
 export class CityRepository {
-  constructor(private provider = californiaProvider) {}
+  private cachedCitiesByState = new Map<string, CitySummary[]>();
+  private customProvider?: IStateMosqueProvider;
+
+  constructor(provider?: IStateMosqueProvider) {
+    if (provider) {
+      this.customProvider = provider;
+    }
+  }
+
+  /**
+   * Resolves stateCode and config arguments cleanly
+   */
+  private resolveArgs(
+    stateCodeOrConfig?: string | CitySeoConfig,
+    config?: CitySeoConfig
+  ): { stateCode: string; seoConfig: CitySeoConfig } {
+    let stateCode = 'CA';
+    let seoConfig = DEFAULT_CITY_SEO_CONFIG;
+
+    if (typeof stateCodeOrConfig === 'string') {
+      stateCode = normalizeStateCode(stateCodeOrConfig);
+      if (config) {
+        seoConfig = config;
+      }
+    } else if (typeof stateCodeOrConfig === 'object' && stateCodeOrConfig !== null) {
+      seoConfig = stateCodeOrConfig;
+    }
+
+    return { stateCode, seoConfig };
+  }
 
   /**
    * Aggregates mosques into comprehensive CitySummary models
    */
-  async getAllCities(config: CitySeoConfig = DEFAULT_CITY_SEO_CONFIG): Promise<CitySummary[]> {
-    if (cachedCities) {
-      return cachedCities;
+  async getAllCities(
+    stateCodeOrConfig?: string | CitySeoConfig,
+    config?: CitySeoConfig
+  ): Promise<CitySummary[]> {
+    const { stateCode, seoConfig } = this.resolveArgs(stateCodeOrConfig, config);
+    const cacheKey = `${stateCode}_${seoConfig.minMosqueCount}_${seoConfig.allowTierB}`;
+
+    if (this.cachedCitiesByState.has(cacheKey)) {
+      return this.cachedCitiesByState.get(cacheKey)!;
     }
 
-    const allMosques = await this.provider.getAll();
+    let allMosques: Mosque[];
+    if (this.customProvider) {
+      allMosques = await this.customProvider.getAll();
+    } else {
+      allMosques = await mosqueRepository.getMosquesByState(stateCode);
+      if (allMosques.length === 0 && stateCode === 'CA') {
+        allMosques = await californiaProvider.getAll();
+      }
+    }
+
     const cityMap = new Map<string, {
       city: string;
       state: string;
@@ -91,7 +136,7 @@ export class CityRepository {
         tier = 'tier_b';
       }
 
-      const isEligible = isCityEligibleForSeo(count, config);
+      const isEligible = isCityEligibleForSeo(count, seoConfig);
 
       // Deterministically sort mosques within city: verified first, then review count, then name
       publishableMosques.sort((a, b) => {
@@ -131,16 +176,20 @@ export class CityRepository {
       return a.city.localeCompare(b.city);
     });
 
-    cachedCities = summaries;
+    this.cachedCitiesByState.set(cacheKey, summaries);
     return summaries;
   }
 
   /**
    * Retrieves only cities eligible for public indexable SEO pages
    */
-  async getEligibleCities(config: CitySeoConfig = DEFAULT_CITY_SEO_CONFIG): Promise<CitySummary[]> {
-    const all = await this.getAllCities(config);
-    return all.filter(c => isCityEligibleForSeo(c.mosqueCount, config));
+  async getEligibleCities(
+    stateCodeOrConfig?: string | CitySeoConfig,
+    config?: CitySeoConfig
+  ): Promise<CitySummary[]> {
+    const { seoConfig } = this.resolveArgs(stateCodeOrConfig, config);
+    const all = await this.getAllCities(stateCodeOrConfig, config);
+    return all.filter(c => isCityEligibleForSeo(c.mosqueCount, seoConfig));
   }
 
   /**
@@ -150,10 +199,11 @@ export class CityRepository {
   async getCityBySlug(
     citySlug: string,
     onlyEligible = true,
-    config: CitySeoConfig = DEFAULT_CITY_SEO_CONFIG
+    stateCodeOrConfig?: string | CitySeoConfig,
+    config?: CitySeoConfig
   ): Promise<CitySummary | null> {
     const normalizedSlug = slugify(citySlug);
-    const all = await this.getAllCities(config);
+    const all = await this.getAllCities(stateCodeOrConfig, config);
     const found = all.find(c => c.slug === normalizedSlug);
 
     if (!found) return null;
@@ -168,9 +218,10 @@ export class CityRepository {
   async getRelatedEligibleCities(
     currentCitySlug: string,
     limit = 6,
-    config: CitySeoConfig = DEFAULT_CITY_SEO_CONFIG
+    stateCodeOrConfig?: string | CitySeoConfig,
+    config?: CitySeoConfig
   ): Promise<CitySummary[]> {
-    const eligible = await this.getEligibleCities(config);
+    const eligible = await this.getEligibleCities(stateCodeOrConfig, config);
     return eligible
       .filter(c => c.slug !== currentCitySlug)
       .slice(0, limit);

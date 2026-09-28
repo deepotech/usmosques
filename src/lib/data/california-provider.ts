@@ -3,60 +3,61 @@ import path from 'path';
 import { RawMosqueRecord } from './validation';
 import { normalizeMosqueDataset } from './normalization';
 import { Mosque } from '@/types/mosque';
+import { GenericStateProvider } from './state-provider';
 
 let cachedMosques: Mosque[] | null = null;
 
+function loadCaliforniaRawRecords(): RawMosqueRecord[] {
+  const candidatePaths = [
+    path.join(process.cwd(), 'data', 'raw', 'california.json'),
+    path.join(process.cwd(), 'California – over 400 mosques.json'),
+  ];
+
+  for (const p of candidatePaths) {
+    if (fs.existsSync(p)) {
+      const content = fs.readFileSync(p, 'utf-8');
+      return JSON.parse(content);
+    }
+  }
+
+  console.warn('[california-provider] Could not find California raw JSON file');
+  return [];
+}
+
 /**
- * Loads and normalizes the California dataset from data/raw/california.json
+ * Loads and normalizes the California dataset synchronously (retained for backward compatibility)
  */
 export function getCaliforniaMosquesSync(): Mosque[] {
   if (cachedMosques) {
     return cachedMosques;
   }
 
-  // Resolve path to raw file
-  const candidatePaths = [
-    path.join(process.cwd(), 'data', 'raw', 'california.json'),
-    path.join(process.cwd(), 'California – over 400 mosques.json'),
-  ];
-
-  let rawContent: string | null = null;
-  for (const p of candidatePaths) {
-    if (fs.existsSync(p)) {
-      rawContent = fs.readFileSync(p, 'utf-8');
-      break;
-    }
-  }
-
-  if (!rawContent) {
-    // If running in environment without filesystem access, fallback to empty array
-    console.warn('[california-provider] Could not find California raw JSON file');
-    cachedMosques = [];
-    return cachedMosques;
-  }
-
-  const rawRecords: RawMosqueRecord[] = JSON.parse(rawContent);
+  const rawRecords = loadCaliforniaRawRecords();
   cachedMosques = normalizeMosqueDataset(rawRecords);
   return cachedMosques;
 }
 
-export class CaliforniaProvider {
-  async getAll(): Promise<Mosque[]> {
-    return getCaliforniaMosquesSync();
+/**
+ * California Mosque Provider
+ * Implements IStateMosqueProvider via GenericStateProvider.
+ */
+export class CaliforniaProvider extends GenericStateProvider {
+  constructor() {
+    super('CA', () => loadCaliforniaRawRecords());
   }
 
-  async getBySlug(slug: string): Promise<Mosque | null> {
-    const list = getCaliforniaMosquesSync();
-    return list.find(m => m.slug === slug) || null;
+  override async getAll(): Promise<Mosque[]> {
+    if (!this.cachedMosques) {
+      this.cachedMosques = getCaliforniaMosquesSync();
+    }
+    return this.cachedMosques;
   }
 
-  async getById(id: string): Promise<Mosque | null> {
-    const list = getCaliforniaMosquesSync();
-    return list.find(m => m.id === id || m.cid === id || m.placeId === id) || null;
-  }
-
+  /**
+   * Retrieves aggregated cities for California (retained for backward compatibility)
+   */
   async getCities(): Promise<{ city: string; count: number }[]> {
-    const list = getCaliforniaMosquesSync().filter(m => m.dataStatus !== 'excluded');
+    const list = await this.getPublishable();
     const cityMap = new Map<string, number>();
 
     list.forEach(m => {

@@ -1,5 +1,6 @@
 import { RawMosqueRecord } from './validation';
 import { Mosque, MosqueDataStatus, MosqueOpeningHourDay } from '@/types/mosque';
+import { getStateConfig, normalizeStateCode } from '@/lib/config/state-registry';
 
 /**
  * Creates a URL-friendly, safe slug from mosque name and city/id
@@ -71,7 +72,8 @@ export function parseAddressFallback(address: string): {
     if (stateZipMatch) {
       const stateCode = stateZipMatch[1].toUpperCase();
       const postalCode = stateZipMatch[2];
-      const state = stateCode === 'CA' ? 'California' : stateCode;
+      const config = getStateConfig(stateCode);
+      const state = config ? config.name : stateCode;
       return { city, state, stateCode, postalCode };
     }
     return { city };
@@ -94,7 +96,11 @@ export function determineDataStatus(
   const hasCommercial =
     catNameLower.includes('caterer') ||
     catNameLower.includes('restaurant') ||
-    allCats.some(c => c.includes('caterer') || c.includes('restaurant'));
+    catNameLower.includes('grocery') ||
+    catNameLower.includes('food market') ||
+    allCats.some(c =>
+      c.includes('caterer') || c.includes('restaurant') || c.includes('grocery') || c.includes('food market')
+    );
 
   if (hasCommercial) {
     return { status: 'excluded', reason: 'Commercial food/catering business' };
@@ -216,19 +222,23 @@ export function normalizeMosqueRecord(
   raw: RawMosqueRecord,
   index: number,
   existingSlugs = new Set<string>(),
-  sharedAddressSet = new Set<string>()
+  sharedAddressSet = new Set<string>(),
+  defaultStateCode = 'CA',
+  defaultStateName = 'California'
 ): Mosque {
   // Deep clone check / safety
   const rawCopy: RawMosqueRecord = JSON.parse(JSON.stringify(raw));
 
   const fallback = parseAddressFallback(rawCopy.address);
   const city = (rawCopy.city?.trim() || fallback.city || 'Unknown City').trim();
-  const state = (rawCopy.state?.trim() || fallback.state || 'California').trim();
-  const stateCode = (fallback.stateCode || (state === 'California' ? 'CA' : 'US')).trim();
+  const rawStateCode = rawCopy.state ? normalizeStateCode(rawCopy.state) : undefined;
+  const stateCode = (fallback.stateCode || rawStateCode || defaultStateCode).trim().toUpperCase();
+  const stateConfig = getStateConfig(stateCode);
+  const state = (rawCopy.state?.trim() || fallback.state || (stateConfig ? stateConfig.name : defaultStateName)).trim();
   const postalCode = rawCopy.postalCode?.trim() || fallback.postalCode || undefined;
 
   // Unique ID
-  const id = rawCopy.cid || rawCopy.placeId || `mosque-ca-${index}`;
+  const id = rawCopy.cid || rawCopy.placeId || `mosque-${stateCode.toLowerCase()}-${index}`;
 
   // Unique Slug generation
   let baseSlug = slugify(rawCopy.title);

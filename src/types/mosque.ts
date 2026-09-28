@@ -47,6 +47,7 @@ export interface Mosque {
 export interface MosqueFilterParams {
   query?: string;
   city?: string;
+  stateCode?: string;
   postalCode?: string;
   status?: MosqueDataStatus | 'all';
   openNow?: boolean;
