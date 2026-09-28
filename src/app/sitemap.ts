@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { californiaProvider } from '@/lib/data/california-provider';
+import { cityRepository } from '@/lib/data/city-repository';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com';
@@ -33,6 +34,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
+    const eligibleCities = await cityRepository.getEligibleCities();
+    const cityRoutes: MetadataRoute.Sitemap = eligibleCities.map(c => ({
+      url: `${baseUrl}/mosques/california/${c.slug}`,
+      lastModified,
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
+
     const mosques = await californiaProvider.getAll();
     const verifiedMosques = mosques.filter(m => m.dataStatus === 'verified');
 
@@ -43,9 +52,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    return [...staticRoutes, ...mosqueRoutes];
+    return [...staticRoutes, ...cityRoutes, ...mosqueRoutes];
   } catch (e) {
     console.error('Failed generating dynamic sitemap routes:', e);
     return staticRoutes;
   }
 }
+

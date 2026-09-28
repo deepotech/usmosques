@@ -1,4 +1,5 @@
 import { Mosque } from '@/types/mosque';
+import { CitySummary } from '@/types/city';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com';
 
@@ -96,4 +97,27 @@ export function generateMosqueSchema(mosque: Mosque) {
   }
 
   return schema;
+}
+
+/**
+ * Generates CollectionPage / ItemList schema for an eligible City Page
+ */
+export function generateCityCollectionSchema(city: CitySummary) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Mosques in ${city.city}, ${city.stateCode}`,
+    url: `${SITE_URL}/mosques/california/${city.slug}`,
+    description: `Directory of verified mosques and Islamic centers in ${city.city}, ${city.state}.`,
+    mainEntity: {
+      '@type': 'ItemList',
+      numberOfItems: city.mosqueCount,
+      itemListElement: city.mosques.map((m, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: `${SITE_URL}/mosque/${m.slug}`,
+        name: m.name,
+      })),
+    },
+  };
 }

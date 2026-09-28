@@ -54,22 +54,22 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-2 text-sm text-slate-400">
               <li>
-                <Link href="/mosque-near-me?city=Sacramento" className="hover:text-white transition-colors">
+                <Link href="/mosques/california/sacramento" className="hover:text-white transition-colors">
                   Sacramento Mosques
                 </Link>
               </li>
               <li>
-                <Link href="/mosque-near-me?city=Los+Angeles" className="hover:text-white transition-colors">
+                <Link href="/mosques/california/los-angeles" className="hover:text-white transition-colors">
                   Los Angeles Mosques
                 </Link>
               </li>
               <li>
-                <Link href="/mosque-near-me?city=San+Diego" className="hover:text-white transition-colors">
+                <Link href="/mosques/california/san-diego" className="hover:text-white transition-colors">
                   San Diego Mosques
                 </Link>
               </li>
               <li>
-                <Link href="/mosque-near-me?city=Fremont" className="hover:text-white transition-colors">
+                <Link href="/mosques/california/fremont" className="hover:text-white transition-colors">
                   Fremont Mosques
                 </Link>
               </li>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { mosqueRepository } from '@/lib/data/mosque-repository';
+import { cityRepository } from '@/lib/data/city-repository';
 import { HomeHeroSearch } from '@/components/home/HomeHeroSearch';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
 import { MapPin, ShieldCheck, CheckCircle2, Navigation, Clock } from 'lucide-react';
@@ -7,7 +8,8 @@ import { MapPin, ShieldCheck, CheckCircle2, Navigation, Clock } from 'lucide-rea
 export const revalidate = 3600; // 1 hour ISR
 
 export default async function HomePage() {
-  const topCities = await mosqueRepository.getTopCities(12);
+  const eligibleCities = await cityRepository.getEligibleCities();
+  const topCities = eligibleCities.slice(0, 12);
   const { mosques: featuredMosques } = await mosqueRepository.search({
     status: 'verified',
     limit: 6,
@@ -118,17 +120,17 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {topCities.map(({ city, count }) => (
+            {topCities.map(c => (
               <Link
-                key={city}
-                href={`/mosque-near-me?city=${encodeURIComponent(city)}`}
+                key={c.slug}
+                href={`/mosques/california/${c.slug}`}
                 className="group flex items-center justify-between rounded-xl border border-slate-800 bg-slate-800/60 px-4 py-3 hover:border-brand-600 hover:bg-slate-800 transition-all"
               >
                 <span className="text-sm font-medium text-slate-200 group-hover:text-white truncate">
-                  {city}
+                  {c.city}
                 </span>
                 <span className="rounded-md bg-slate-700 px-2 py-0.5 text-xs font-semibold text-slate-300 group-hover:bg-brand-900 group-hover:text-brand-300">
-                  {count}
+                  {c.mosqueCount}
                 </span>
               </Link>
             ))}
