@@ -98,12 +98,18 @@ export function determineDataStatus(
     catNameLower.includes('restaurant') ||
     catNameLower.includes('grocery') ||
     catNameLower.includes('food market') ||
+    catNameLower.includes('paint store') ||
+    catNameLower.includes('retail') ||
     allCats.some(c =>
-      c.includes('caterer') || c.includes('restaurant') || c.includes('grocery') || c.includes('food market')
+      c.includes('caterer') ||
+      c.includes('restaurant') ||
+      c.includes('grocery') ||
+      c.includes('food market') ||
+      c.includes('paint store')
     );
 
   if (hasCommercial) {
-    return { status: 'excluded', reason: 'Commercial food/catering business' };
+    return { status: 'excluded', reason: 'Commercial/retail business' };
   }
   if (catNameLower.includes('clothing store') || allCats.some(c => c.includes('clothing store'))) {
     return { status: 'excluded', reason: 'Retail clothing store' };
@@ -111,7 +117,10 @@ export function determineDataStatus(
 
   // 2. Needs review: Pure educational or cultural entity without mosque in primary title/category
   const isPureSchool =
-    (catNameLower.includes('school') || catNameLower.includes('educational institution')) &&
+    (catNameLower.includes('school') ||
+     catNameLower.includes('school center') ||
+     catNameLower.includes('education center') ||
+     catNameLower.includes('educational institution')) &&
     !titleLower.includes('masjid') &&
     !titleLower.includes('mosque') &&
     !titleLower.includes('islamic center');
@@ -126,6 +135,7 @@ export function determineDataStatus(
 
   const isCulturalOrFoundation =
     catNameLower.includes('cultural center') ||
+    catNameLower.includes('community center') ||
     catNameLower.includes('foundation') ||
     catNameLower.includes('non-profit organization');
 
@@ -314,7 +324,7 @@ export function normalizeMosqueRecord(
     amenities,
     accessibility,
     description: rawCopy.description?.trim() || undefined,
-    source: 'california_dataset',
+    source: `${stateCode.toLowerCase()}_dataset`,
     sourceUrl: rawCopy.url || undefined,
     dataStatus: status,
     statusReason: reason,

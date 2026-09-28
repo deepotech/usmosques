@@ -32,23 +32,30 @@ describe('Phase 3A: State Registry & Configuration', () => {
     expect(tx).toBeDefined();
     expect(tx?.name).toBe('Texas');
     expect(tx?.code).toBe('TX');
-    expect(tx?.enabled).toBe(false); // Dormant in Phase 3A
+    expect(tx?.enabled).toBe(true); // Activated in Phase 3B
 
     const ny = getStateConfig('NY');
     expect(ny).toBeDefined();
     expect(ny?.name).toBe('New York');
-    expect(ny?.enabled).toBe(false); // Dormant in Phase 3A
+    expect(ny?.enabled).toBe(true); // Activated in Phase 3B
+
+    const fl = getStateConfig('FL');
+    expect(fl?.enabled).toBe(false); // Dormant
   });
 
-  it('enforces that only California is currently enabled', () => {
+  it('enforces that only CA, TX, and NY are currently enabled', () => {
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(1);
-    expect(enabled[0].code).toBe('CA');
+    expect(enabled.length).toBe(3);
+    const codes = enabled.map(s => s.code);
+    expect(codes).toContain('CA');
+    expect(codes).toContain('TX');
+    expect(codes).toContain('NY');
 
     expect(isStateEnabled('CA')).toBe(true);
-    expect(isStateEnabled('TX')).toBe(false);
-    expect(isStateEnabled('NY')).toBe(false);
+    expect(isStateEnabled('TX')).toBe(true);
+    expect(isStateEnabled('NY')).toBe(true);
     expect(isStateEnabled('FL')).toBe(false);
+    expect(isStateEnabled('IL')).toBe(false);
   });
 
   it('falls back to default state (California) for unknown inputs', () => {
@@ -233,9 +240,14 @@ describe('Phase 3A: GenericStateProvider & MosqueRepository Isolation', () => {
     expect(caMosques.length).toBeGreaterThan(300);
     expect(caMosques.every(m => m.stateCode === 'CA')).toBe(true);
 
-    // Default search (no stateCode) queries only ENABLED states (which is only CA)
+    // Default search (no stateCode) queries only ENABLED states (CA, TX, NY)
     const defaultSearch = await repo.search({});
-    expect(defaultSearch.mosques.every(m => m.stateCode === 'CA')).toBe(true);
+    const enabledCodes = new Set(['CA', 'TX', 'NY']);
+    expect(defaultSearch.mosques.every(m => enabledCodes.has(m.stateCode))).toBe(true);
+
+    // Search explicitly scoped to CA returns only CA
+    const caSearch = await repo.search({ stateCode: 'CA' });
+    expect(caSearch.mosques.every(m => m.stateCode === 'CA')).toBe(true);
 
     // Search explicitly scoped to TX returns TX results
     const txSearch = await repo.search({ stateCode: 'TX' });
@@ -304,12 +316,14 @@ describe('Phase 3A: Sitemap Safety (Zero Inactive State Leakage)', () => {
     const routes = await sitemap();
     const urls = routes.map(r => r.url);
 
-    // Must include California routes
+    // Must include enabled states (California, Texas, New York)
     expect(urls.some(u => u.includes('/mosques/california'))).toBe(true);
+    expect(urls.some(u => u.includes('/mosques/texas'))).toBe(true);
+    expect(urls.some(u => u.includes('/mosques/new-york'))).toBe(true);
 
-    // Must NEVER include dormant states (Texas, New York, etc.)
-    expect(urls.some(u => u.includes('/mosques/texas'))).toBe(false);
-    expect(urls.some(u => u.includes('/mosques/new-york'))).toBe(false);
+    // Must NEVER include dormant states (Florida, Illinois, South Carolina, etc.)
     expect(urls.some(u => u.includes('/mosques/florida'))).toBe(false);
+    expect(urls.some(u => u.includes('/mosques/illinois'))).toBe(false);
+    expect(urls.some(u => u.includes('/mosques/south-carolina'))).toBe(false);
   });
 });

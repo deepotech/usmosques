@@ -1,6 +1,7 @@
 import { Mosque, MosqueFilterParams } from '@/types/mosque';
 import { IStateMosqueProvider } from '@/types/state';
 import { californiaProvider } from './california-provider';
+import { GenericStateProvider } from './state-provider';
 import { calculateHaversineDistanceMiles } from '../geo/distance';
 import { getMosqueOpenStatus, getTimezoneForState } from '../geo/timezone';
 import { normalizeStateCode, isStateEnabled } from '../config/state-registry';
@@ -23,6 +24,8 @@ export class MosqueRepository implements IMosqueRepository {
     if (defaultProvider) {
       this.registerProvider(defaultProvider);
     }
+    this.registerProvider(new GenericStateProvider('TX'));
+    this.registerProvider(new GenericStateProvider('NY'));
   }
 
   /**

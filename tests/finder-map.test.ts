@@ -264,7 +264,7 @@ describe('Phase 2B: Interactive Mosque Finder & Map Domain Logic', () => {
 
   describe('H. Duplicate Coordinates Retention', () => {
     it('preserves multiple entities sharing the same coordinates without dropping records', async () => {
-      const { mosques } = await mosqueRepository.search({ limit: 500 });
+      const { mosques } = await mosqueRepository.search({ stateCode: 'CA', limit: 500 });
 
       // Fremont coordinates collision test: 37.509334, -121.971816
       const sharingCoords = mosques.filter(

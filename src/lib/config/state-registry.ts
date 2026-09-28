@@ -52,10 +52,10 @@ export const STATE_REGISTRY: Record<string, StateConfig> = {
     slug: 'texas',
     timezone: 'America/Chicago',
     timezones: ['America/Chicago', 'America/Denver'],
-    enabled: false, // Dormant in Phase 3A
-    finderEnabled: false,
-    seoEnabled: false,
-    datasetPath: 'Texas – about 332 mosques.json',
+    enabled: true, // Activated in Phase 3B after dataset validation
+    finderEnabled: true,
+    seoEnabled: true,
+    datasetPath: 'data/raw/texas.json',
     bounds: { minLat: 25.8, maxLat: 36.6, minLng: -106.7, maxLng: -93.5 },
   },
   NY: {
@@ -64,10 +64,10 @@ export const STATE_REGISTRY: Record<string, StateConfig> = {
     slug: 'new-york',
     timezone: 'America/New_York',
     timezones: ['America/New_York'],
-    enabled: false, // Dormant in Phase 3A
-    finderEnabled: false,
-    seoEnabled: false,
-    datasetPath: 'New York – more than 340 mosques.json',
+    enabled: true, // Activated in Phase 3B after dataset validation
+    finderEnabled: true,
+    seoEnabled: true,
+    datasetPath: 'data/raw/new-york.json',
     bounds: { minLat: 40.4, maxLat: 45.1, minLng: -79.8, maxLng: -71.8 },
   },
   FL: {
