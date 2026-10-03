@@ -1,10 +1,15 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { mosqueRepository } from '@/lib/data/mosque-repository';
 import { generateMosqueSchema, generateBreadcrumbSchema } from '@/lib/seo/schema';
 import { constructMetadata } from '@/lib/seo/metadata';
+import { getStateConfig } from '@/lib/config/state-registry';
+import { slugify } from '@/lib/data/normalization';
+import { getMosquePath } from '@/lib/seo/mosque-url';
+import { getLegacyRedirect } from '@/lib/seo/mosque-redirects';
+import { isIndexableCity } from '@/lib/seo/eligibility';
 import { MosqueStatusBadge } from '@/components/mosque/MosqueStatusBadge';
 import { RatingSummary } from '@/components/mosque/RatingSummary';
 import { ActionButtons } from '@/components/mosque/ActionButtons';
@@ -24,8 +29,29 @@ interface MosqueDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
+/**
+ * Generates static parameters for all public mosque entities using their canonical unique slugs.
+ */
+export async function generateStaticParams() {
+  const { mosques } = await mosqueRepository.search({ status: 'all', limit: 3000 });
+  const publicMosques = mosques.filter(m => m.dataStatus !== 'excluded');
+  return publicMosques.map(m => ({ slug: m.slug }));
+}
+
 export async function generateMetadata({ params }: MosqueDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
+
+  // Safe legacy redirect check
+  const redirectTarget = getLegacyRedirect(slug);
+  if (redirectTarget) {
+    return constructMetadata({
+      title: 'Redirecting...',
+      description: 'Redirecting to canonical mosque URL',
+      canonical: redirectTarget,
+      noIndex: true,
+    });
+  }
+
   const mosque = await mosqueRepository.findBySlug(slug);
 
   if (!mosque) {
@@ -34,16 +60,30 @@ export async function generateMetadata({ params }: MosqueDetailPageProps): Promi
     };
   }
 
+  // needs_review listings are publicly visible but must not be indexed.
+  // They have not been fully validated and indexing them risks quality signals.
+  // noindex,follow allows crawlers to still discover canonical pages via links.
+  const noIndex = mosque.dataStatus !== 'verified';
+
   return constructMetadata({
     title: `${mosque.name} in ${mosque.city}, ${mosque.stateCode}`,
     description: `Official information for ${mosque.name} located at ${mosque.address}. View directions, contact phone number, website, opening hours, and prayer amenities.`,
-    canonical: `/mosque/${mosque.slug}`,
+    canonical: getMosquePath(mosque),
     ogImage: mosque.imageUrl,
+    noIndex,
   });
 }
 
+
 export default async function MosqueDetailPage({ params }: MosqueDetailPageProps) {
   const { slug } = await params;
+
+  // Safe legacy redirect check (301)
+  const redirectTarget = getLegacyRedirect(slug);
+  if (redirectTarget) {
+    redirect(redirectTarget);
+  }
+
   const mosque = await mosqueRepository.findBySlug(slug);
 
   if (!mosque) {
@@ -55,14 +95,30 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
     await mosqueRepository.findNearby(mosque.latitude, mosque.longitude, 4, 30)
   ).filter(m => m.id !== mosque.id);
 
+  // Resolve canonical state and city slugs for the SEO breadcrumb hierarchy.
+  // We use getStateConfig (same source as routes) and slugify (same function
+  // as CityRepository) so breadcrumb URLs always match existing canonical pages.
+  const stateConfig = getStateConfig(mosque.stateCode);
+  const stateSlug = stateConfig?.slug ?? mosque.stateCode.toLowerCase();
+  const citySlug = slugify(mosque.city);
+
   // Schemas
   const mosqueSchema = generateMosqueSchema(mosque);
-  const breadcrumbSchema = generateBreadcrumbSchema([
+
+  // Check if city qualifies for an indexable city page to guarantee valid breadcrumb URLs
+  const hasIndexableCity = await isIndexableCity(mosque.stateCode, mosque.city);
+
+  // Canonical geographic hierarchy
+  const breadcrumbItems: { name: string; url: string }[] = [
     { name: 'Home', url: '/' },
-    { name: 'Mosques Near Me', url: '/mosque-near-me' },
-    { name: mosque.city, url: `/mosque-near-me?city=${encodeURIComponent(mosque.city)}` },
-    { name: mosque.name, url: `/mosque/${mosque.slug}` },
-  ]);
+    { name: stateConfig?.name ?? mosque.stateCode, url: `/mosques/${stateSlug}` },
+  ];
+  if (hasIndexableCity) {
+    breadcrumbItems.push({ name: mosque.city, url: `/mosques/${stateSlug}/${citySlug}` });
+  }
+  breadcrumbItems.push({ name: mosque.name, url: getMosquePath(mosque) });
+
+  const breadcrumbSchema = generateBreadcrumbSchema(breadcrumbItems);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-10">
@@ -82,17 +138,26 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
           Home
         </Link>
         <span>/</span>
-        <Link href="/mosque-near-me" className="hover:text-slate-900 transition-colors">
-          Mosques Near Me
+        <Link href={`/mosques/${stateSlug}`} className="hover:text-slate-900 transition-colors">
+          {stateConfig?.name ?? mosque.stateCode}
         </Link>
         <span>/</span>
-        <Link
-          href={`/mosque-near-me?city=${encodeURIComponent(mosque.city)}`}
-          className="hover:text-slate-900 transition-colors"
-        >
-          {mosque.city}
-        </Link>
-        <span>/</span>
+        {hasIndexableCity ? (
+          <>
+            <Link
+              href={`/mosques/${stateSlug}/${citySlug}`}
+              className="hover:text-slate-900 transition-colors"
+            >
+              {mosque.city}
+            </Link>
+            <span>/</span>
+          </>
+        ) : (
+          <>
+            <span className="text-slate-500">{mosque.city}</span>
+            <span>/</span>
+          </>
+        )}
         <span className="text-slate-900 font-medium truncate max-w-xs">{mosque.name}</span>
       </nav>
 

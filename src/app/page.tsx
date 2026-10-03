@@ -4,12 +4,14 @@ import { cityRepository } from '@/lib/data/city-repository';
 import { getEnabledStates } from '@/lib/config/state-registry';
 import { HomeHeroSearch } from '@/components/home/HomeHeroSearch';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
+import { generateWebSiteSchema } from '@/lib/seo/schema';
 import { MapPin, ShieldCheck, CheckCircle2, Navigation, Clock, Building } from 'lucide-react';
 
 export const revalidate = 3600; // 1 hour ISR
 
 export default async function HomePage() {
   const enabledStates = getEnabledStates();
+  const websiteSchema = generateWebSiteSchema();
 
   const stateSummaries = await Promise.all(
     enabledStates.map(async s => {
@@ -43,6 +45,12 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-16 pb-20">
+      {/* JSON-LD WebSite Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-50/50 via-white to-slate-50 pt-16 pb-20 border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">

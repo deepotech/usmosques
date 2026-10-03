@@ -7,6 +7,7 @@ import { Mosque } from '@/types/mosque';
 import { createMosqueIcon, createUserLocationIcon } from './map-icons';
 import { getMosqueOpenStatus, getTimezoneForMosque } from '@/lib/geo/timezone';
 import { formatDistance } from '@/lib/geo/distance';
+import { getMosquePath } from '@/lib/seo/mosque-url';
 import { Maximize2, Navigation } from 'lucide-react';
 
 interface MosqueMapProps {
@@ -186,8 +187,8 @@ export function MosqueMap({
           </p>
           ${ratingHtml}
           <div style="display: flex; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
-            <a href="/mosque/${escapeHtml(
-              m.slug
+            <a href="${getMosquePath(
+              m
             )}" style="flex: 1; text-align: center; background-color: #15803d; color: white; border-radius: 6px; padding: 5px 8px; font-size: 11px; font-weight: 600; text-decoration: none;">
               View Details
             </a>

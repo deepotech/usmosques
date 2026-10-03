@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
-import { generateWebSiteSchema } from '@/lib/seo/schema';
 import './globals.css';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosques.com'),
+  alternates: {
+    canonical: '/',
+  },
   title: {
     default: 'US Mosque Finder | Find Mosques Near You, Hours & Directions',
     template: '%s | US Mosque Finder',
@@ -18,7 +20,8 @@ export const metadata: Metadata = {
     'Islamic center near me',
     'mosque open now',
     'mosque directions',
-    'California mosques',
+    'US mosques',
+    'masjid finder',
   ],
   authors: [{ name: 'US Mosque Finder Team' }],
   creator: 'US Mosque Finder',
@@ -41,16 +44,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const websiteSchema = generateWebSiteSchema();
-
   return (
     <html lang="en" className="h-full antialiased">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
-        />
-      </head>
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 selection:bg-brand-100 selection:text-brand-900">
         <Header />
         <main className="flex-1">{children}</main>

@@ -4,7 +4,8 @@ import { getStateConfig, isStateEnabled } from '@/lib/config/state-registry';
 import { cityRepository } from '@/lib/data/city-repository';
 import { mosqueRepository } from '@/lib/data/mosque-repository';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
-import { generateBreadcrumbSchema } from '@/lib/seo/schema';
+import { generateBreadcrumbSchema, generateStateCollectionSchema } from '@/lib/seo/schema';
+import { getMosquePath } from '@/lib/seo/mosque-url';
 import { Building, MapPin, Compass, Search, ShieldCheck } from 'lucide-react';
 
 interface StateDirectoryViewProps {
@@ -19,6 +20,7 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
 
   const eligibleCities = await cityRepository.getEligibleCities(stateCode);
   const allCities = await cityRepository.getAllCities(stateCode);
+  const nonEligibleCities = allCities.filter(c => !c.isEligible);
   const { mosques: featuredMosques } = await mosqueRepository.search({
     stateCode: config.code,
     status: 'verified',
@@ -28,11 +30,16 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
   const totalPublishableMosques = allCities.reduce((sum, c) => sum + c.mosqueCount, 0);
   const totalVerifiedMosques = allCities.reduce((sum, c) => sum + c.verifiedCount, 0);
 
-  // Structured Data Schema
+  // Structured Data Schemas
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'Home', url: '/' },
-    { name: `${config.name} Mosques`, url: `/mosques/${config.slug}` },
+    { name: config.name, url: `/mosques/${config.slug}` },
   ]);
+  const collectionSchema = generateStateCollectionSchema(
+    config,
+    totalPublishableMosques,
+    featuredMosques
+  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-12">
@@ -40,6 +47,10 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionSchema) }}
       />
 
       {/* Breadcrumb */}
@@ -122,27 +133,63 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
         )}
       </section>
 
-      {/* Other Towns & Communities */}
-      <section className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-base font-bold text-slate-900">
-              Looking for smaller towns or single-mosque communities?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
-              {config.name} has {Math.max(0, allCities.length - eligibleCities.length)} additional cities with local prayer spaces and Islamic centers.
-            </p>
+      {/* Additional Towns & Communities Directory */}
+      {nonEligibleCities.length > 0 && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Compass className="h-5 w-5 text-brand-700" />
+                <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+                  Additional Towns &amp; Communities in {config.name}
+                </h2>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Verified local prayer spaces and Islamic centers serving smaller communities across {config.name}.
+              </p>
+            </div>
+
+            <Link
+              href="/mosque-near-me"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-800 transition-colors flex-shrink-0 self-start sm:self-auto"
+            >
+              <Search className="h-4 w-4" />
+              Search All by Location
+            </Link>
           </div>
 
-          <Link
-            href="/mosque-near-me"
-            className="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-800 transition-colors flex-shrink-0"
-          >
-            <Search className="h-4 w-4" />
-            Search All {config.name} Mosques
-          </Link>
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            {nonEligibleCities.map(c => (
+              <div
+                key={c.slug}
+                className="rounded-xl border border-slate-200 p-3.5 bg-slate-50/50 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-900">{c.city}</span>
+                  <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    {c.mosqueCount} {c.mosqueCount === 1 ? 'mosque' : 'mosques'}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  {c.mosques.slice(0, 3).map(m => (
+                    <Link
+                      key={m.id}
+                      href={getMosquePath(m)}
+                      className="block text-xs text-brand-700 hover:text-brand-900 hover:underline truncate"
+                      title={m.name}
+                    >
+                      {m.name}
+                    </Link>
+                  ))}
+                  {c.mosqueCount > 3 && (
+                    <span className="text-[10px] text-slate-400">+{c.mosqueCount - 3} more</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured Mosques in State */}
       <section className="space-y-6">

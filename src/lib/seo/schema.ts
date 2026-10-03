@@ -1,11 +1,15 @@
 import { Mosque } from '@/types/mosque';
 import { CitySummary } from '@/types/city';
-import { getStateConfig } from '@/lib/config/state-registry';
+import { getStateConfig, StateConfig } from '@/lib/config/state-registry';
+import { getMosqueCanonicalUrl } from './mosque-url';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosques.com';
 
 /**
- * Generates WebSite JSON-LD with Sitelinks Searchbox
+ * Generates WebSite JSON-LD
+ *
+ * Excludes SearchAction because the finder is an interactive, client-side
+ * filtered utility (noindex) rather than a crawlable search endpoint.
  */
 export function generateWebSiteSchema() {
   return {
@@ -13,17 +17,43 @@ export function generateWebSiteSchema() {
     '@type': 'WebSite',
     name: 'US Mosque Finder',
     url: SITE_URL,
-    description: 'Find verified mosques, Islamic centers, directions, prayer facilities, and contact details across the United States.',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: `${SITE_URL}/mosque-near-me?q={search_term_string}`,
-      },
-      'query-input': 'required name=search_term_string',
-    },
+    description:
+      'Find verified mosques, Islamic centers, directions, prayer facilities, and contact details across the United States.',
   };
 }
+
+/**
+ * Generates CollectionPage schema for an enabled State Directory Page
+ */
+export function generateStateCollectionSchema(
+  stateConfig: StateConfig,
+  totalMosques: number,
+  featuredMosques: Mosque[] = []
+) {
+  const schema: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `Mosques in ${stateConfig.name}`,
+    url: `${SITE_URL}/mosques/${stateConfig.slug}`,
+    description: `Comprehensive directory of verified mosques, Islamic centers, and prayer facilities across ${stateConfig.name}.`,
+  };
+
+  if (featuredMosques.length > 0) {
+    schema.mainEntity = {
+      '@type': 'ItemList',
+      numberOfItems: totalMosques,
+      itemListElement: featuredMosques.map((m, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        url: getMosqueCanonicalUrl(m),
+        name: m.name,
+      })),
+    };
+  }
+
+  return schema;
+}
+
 
 /**
  * Generates BreadcrumbList JSON-LD
@@ -49,8 +79,9 @@ export function generateMosqueSchema(mosque: Mosque) {
   const schema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': ['Mosque', 'PlaceOfWorship'],
+    '@id': `${getMosqueCanonicalUrl(mosque)}#place`,
     name: mosque.name,
-    url: `${SITE_URL}/mosque/${mosque.slug}`,
+    url: getMosqueCanonicalUrl(mosque),
     address: {
       '@type': 'PostalAddress',
       streetAddress: mosque.street || mosque.address,
@@ -117,7 +148,7 @@ export function generateCityCollectionSchema(city: CitySummary) {
       itemListElement: city.mosques.map((m, index) => ({
         '@type': 'ListItem',
         position: index + 1,
-        url: `${SITE_URL}/mosque/${m.slug}`,
+        url: getMosqueCanonicalUrl(m),
         name: m.name,
       })),
     },

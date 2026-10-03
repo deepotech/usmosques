@@ -254,7 +254,8 @@ describe('Phase 3B: State Activation & Multi-State Verification', () => {
     // Opening status evaluates cleanly with correct state timezone
     const status = getMosqueOpenStatus(
       [{ day: 'Monday', hours: 'Open 24 hours' }],
-      getTimezoneForState('TX')
+      getTimezoneForState('TX'),
+      new Date('2025-01-06T12:00:00Z')
     );
     expect(status.state).toBe('24hours');
   });

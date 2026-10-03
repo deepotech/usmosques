@@ -6,6 +6,7 @@ import { MosqueStatusBadge } from './MosqueStatusBadge';
 import { DistanceBadge } from './DistanceBadge';
 import { RatingSummary } from './RatingSummary';
 import { ActionButtons } from './ActionButtons';
+import { getMosquePath } from '@/lib/seo/mosque-url';
 import { extractAmenityCapabilities, formatAmenityHighlights } from '@/lib/amenity/amenity-engine';
 import { MapPin, Building2, CheckCircle2 } from 'lucide-react';
 
@@ -85,7 +86,7 @@ export function MosqueCard({
 
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-bold text-slate-900 leading-snug group-hover:text-brand-800 transition-colors">
-              <Link href={`/mosque/${mosque.slug}`} className="focus:outline-none focus:underline">
+              <Link href={getMosquePath(mosque)} className="focus:outline-none focus:underline">
                 {mosque.name}
               </Link>
             </h3>

@@ -11,6 +11,10 @@ export const metadata: Metadata = constructMetadata({
   description:
     'Find mosques near you right now. Use your GPS location or search by city, state, and ZIP code to locate nearest masajid, get driving directions, see opening hours, and contact details.',
   canonical: '/mosque-near-me',
+  // This is an interactive finder/utility page — not a canonical SEO landing page.
+  // noindex,follow prevents it from being indexed while allowing crawlers to
+  // follow outbound links to canonical State/City/Mosque pages.
+  noIndex: true,
 });
 
 interface MosqueNearMePageProps {

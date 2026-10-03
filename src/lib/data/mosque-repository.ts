@@ -5,6 +5,7 @@ import { GenericStateProvider } from './state-provider';
 import { calculateHaversineDistanceMiles } from '../geo/distance';
 import { getMosqueOpenStatus, getTimezoneForMosque } from '../geo/timezone';
 import { normalizeStateCode, isStateEnabled } from '../config/state-registry';
+import { applyCanonicalSlugs } from '@/lib/seo/mosque-url';
 
 export interface IMosqueRepository {
   search(params: MosqueFilterParams): Promise<{ mosques: Mosque[]; total: number }>;
@@ -20,6 +21,12 @@ export interface IMosqueRepository {
 export class MosqueRepository implements IMosqueRepository {
   private providers = new Map<string, IStateMosqueProvider>();
 
+  // Canonical indices for deterministic O(1) lookup
+  private canonicalIndexInitialized = false;
+  private canonicalBySlug = new Map<string, Mosque>();
+  private canonicalById = new Map<string, Mosque>();
+  private canonicalByState = new Map<string, Mosque[]>();
+
   constructor(defaultProvider: IStateMosqueProvider = californiaProvider) {
     if (defaultProvider) {
       this.registerProvider(defaultProvider);
@@ -30,12 +37,20 @@ export class MosqueRepository implements IMosqueRepository {
     this.registerProvider(new GenericStateProvider('IL'));
   }
 
+  private invalidateCanonicalIndex(): void {
+    this.canonicalIndexInitialized = false;
+    this.canonicalBySlug.clear();
+    this.canonicalById.clear();
+    this.canonicalByState.clear();
+  }
+
   /**
    * Registers a state data provider in the repository
    */
   registerProvider(provider: IStateMosqueProvider): void {
     const code = normalizeStateCode(provider.stateCode);
     this.providers.set(code, provider);
+    this.invalidateCanonicalIndex();
   }
 
   /**
@@ -61,30 +76,66 @@ export class MosqueRepository implements IMosqueRepository {
   }
 
   /**
-   * Retrieves all normalized mosques for a specific state
+   * Ensures the global canonical index across all registered providers is initialized
+   */
+  private async ensureCanonicalIndex(): Promise<void> {
+    if (this.canonicalIndexInitialized) {
+      return;
+    }
+
+    const providerList = Array.from(this.providers.values());
+    const mosqueArrays = await Promise.all(providerList.map(p => p.getAll()));
+    const flatMosques = mosqueArrays.flat();
+
+    // Apply centralized 7-step collision resolution
+    const canonicalMosques = applyCanonicalSlugs(flatMosques);
+
+    this.canonicalBySlug.clear();
+    this.canonicalById.clear();
+    this.canonicalByState.clear();
+
+    for (const m of canonicalMosques) {
+      this.canonicalBySlug.set(m.slug, m);
+      this.canonicalById.set(m.id, m);
+      if (m.cid) this.canonicalById.set(m.cid, m);
+      if (m.placeId) this.canonicalById.set(m.placeId, m);
+
+      const stateCode = normalizeStateCode(m.stateCode);
+      const stateList = this.canonicalByState.get(stateCode) || [];
+      stateList.push(m);
+      this.canonicalByState.set(stateCode, stateList);
+    }
+
+    this.canonicalIndexInitialized = true;
+  }
+
+  /**
+   * Retrieves all normalized mosques with unique canonical slugs for a specific state
    */
   async getMosquesByState(stateCode: string): Promise<Mosque[]> {
+    await this.ensureCanonicalIndex();
     const code = normalizeStateCode(stateCode);
-    const provider = this.providers.get(code);
-    if (!provider) {
-      return [];
-    }
-    return provider.getAll();
+    return this.canonicalByState.get(code) || [];
   }
 
   /**
    * Helper to retrieve mosques for searching (either scoped to a state or across enabled states)
    */
   private async getMosquesForSearch(stateCode?: string): Promise<Mosque[]> {
+    await this.ensureCanonicalIndex();
     if (stateCode) {
       return this.getMosquesByState(stateCode);
     }
 
     const enabled = this.getEnabledProviders();
-    // Fallback: if no providers are enabled (e.g., custom unit test), use all registered
-    const providersToQuery = enabled.length > 0 ? enabled : Array.from(this.providers.values());
-    const mosqueArrays = await Promise.all(providersToQuery.map(p => p.getAll()));
-    return mosqueArrays.flat();
+    const enabledCodes = new Set(enabled.map(p => normalizeStateCode(p.stateCode)));
+    const targetCodes = enabledCodes.size > 0 ? enabledCodes : new Set(this.providers.keys());
+
+    const result: Mosque[] = [];
+    for (const code of targetCodes) {
+      result.push(...(this.canonicalByState.get(code) || []));
+    }
+    return result;
   }
 
   async search(params: MosqueFilterParams): Promise<{ mosques: Mosque[]; total: number }> {
@@ -182,37 +233,27 @@ export class MosqueRepository implements IMosqueRepository {
   }
 
   async findBySlug(slug: string, stateCode?: string): Promise<Mosque | null> {
-    if (stateCode) {
-      const provider = this.getProvider(stateCode);
-      if (provider) {
-        const found = await provider.getBySlug(slug);
-        return found ?? null;
-      }
+    await this.ensureCanonicalIndex();
+    const found = this.canonicalBySlug.get(slug);
+    if (!found) {
       return null;
     }
-
-    for (const provider of this.providers.values()) {
-      const found = await provider.getBySlug(slug);
-      if (found) return found;
+    if (stateCode && normalizeStateCode(found.stateCode) !== normalizeStateCode(stateCode)) {
+      return null;
     }
-    return null;
+    return found;
   }
 
   async findById(id: string, stateCode?: string): Promise<Mosque | null> {
-    if (stateCode) {
-      const provider = this.getProvider(stateCode);
-      if (provider) {
-        const found = await provider.getById(id);
-        return found ?? null;
-      }
+    await this.ensureCanonicalIndex();
+    const found = this.canonicalById.get(id);
+    if (!found) {
       return null;
     }
-
-    for (const provider of this.providers.values()) {
-      const found = await provider.getById(id);
-      if (found) return found;
+    if (stateCode && normalizeStateCode(found.stateCode) !== normalizeStateCode(stateCode)) {
+      return null;
     }
-    return null;
+    return found;
   }
 
   async findNearby(

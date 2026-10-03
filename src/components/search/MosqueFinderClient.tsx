@@ -18,6 +18,7 @@ import {
   countAmenityCapabilities,
   countActiveAmenityFilters,
 } from '@/lib/amenity/amenity-engine';
+import { getMosquePath } from '@/lib/seo/mosque-url';
 import { Compass, AlertCircle, XCircle, MapPin, Navigation, ExternalLink } from 'lucide-react';
 
 interface MosqueFinderClientProps {
@@ -552,7 +553,7 @@ export function MosqueFinderClient({
 
                 <div className="mt-3 flex items-center gap-2 pt-2 border-t border-slate-100">
                   <Link
-                    href={`/mosque/${selectedMosque.slug}`}
+                    href={getMosquePath(selectedMosque)}
                     className="flex-1 inline-flex items-center justify-center gap-1 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-800"
                   >
                     View Details

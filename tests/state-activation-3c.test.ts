@@ -239,15 +239,18 @@ describe('Phase 3C: Florida & Illinois Activation', () => {
     expect(getTimezoneForState('FL')).toBe('America/New_York');
     expect(getTimezoneForState('IL')).toBe('America/Chicago');
 
+    const monday = new Date('2025-01-06T12:00:00Z');
     const flStatus = getMosqueOpenStatus(
       [{ day: 'Monday', hours: 'Open 24 hours' }],
-      getTimezoneForState('FL')
+      getTimezoneForState('FL'),
+      monday
     );
     expect(flStatus.state).toBe('24hours');
 
     const ilStatus = getMosqueOpenStatus(
       [{ day: 'Monday', hours: 'Open 24 hours' }],
-      getTimezoneForState('IL')
+      getTimezoneForState('IL'),
+      monday
     );
     expect(ilStatus.state).toBe('24hours');
   });

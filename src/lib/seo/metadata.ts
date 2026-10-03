@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosquefinder.com';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://usmosques.com';
 const SITE_NAME = 'US Mosque Finder';
 
 export function constructMetadata({
@@ -8,12 +8,17 @@ export function constructMetadata({
   description,
   canonical,
   noIndex = false,
+  // noFollow is independent of noIndex.
+  // Utility/finder pages use noindex,follow so crawlers can still
+  // discover canonical content through their outbound links.
+  noFollow = false,
   ogImage = '/og-default.jpg',
 }: {
   title: string;
   description: string;
   canonical?: string;
   noIndex?: boolean;
+  noFollow?: boolean;
   ogImage?: string;
 }): Metadata {
   const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : BASE_URL;
@@ -28,7 +33,7 @@ export function constructMetadata({
       canonical: canonicalUrl,
     },
     robots: noIndex
-      ? { index: false, follow: false }
+      ? { index: false, follow: !noFollow }
       : { index: true, follow: true, 'max-image-preview': 'large' },
     openGraph: {
       title: `${title} | ${SITE_NAME}`,
