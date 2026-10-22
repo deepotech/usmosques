@@ -23,11 +23,13 @@ export function constructMetadata({
 }): Metadata {
   const canonicalUrl = canonical ? `${BASE_URL}${canonical}` : BASE_URL;
 
+  // Clean trailing brand suffix if already present to guarantee exactly one brand suffix
+  const cleanTitle = title.endsWith(` | ${SITE_NAME}`)
+    ? title.slice(0, -(SITE_NAME.length + 3))
+    : title;
+
   return {
-    title: {
-      default: `${title} | ${SITE_NAME}`,
-      template: `%s | ${SITE_NAME}`,
-    },
+    title: cleanTitle,
     description,
     alternates: {
       canonical: canonicalUrl,
@@ -36,7 +38,7 @@ export function constructMetadata({
       ? { index: false, follow: !noFollow }
       : { index: true, follow: true, 'max-image-preview': 'large' },
     openGraph: {
-      title: `${title} | ${SITE_NAME}`,
+      title: `${cleanTitle} | ${SITE_NAME}`,
       description,
       url: canonicalUrl,
       siteName: SITE_NAME,
@@ -45,7 +47,7 @@ export function constructMetadata({
           url: ogImage.startsWith('http') ? ogImage : `${BASE_URL}${ogImage}`,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: cleanTitle,
         },
       ],
       locale: 'en_US',
@@ -53,7 +55,7 @@ export function constructMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} | ${SITE_NAME}`,
+      title: `${cleanTitle} | ${SITE_NAME}`,
       description,
       images: [ogImage.startsWith('http') ? ogImage : `${BASE_URL}${ogImage}`],
     },

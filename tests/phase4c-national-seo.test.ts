@@ -54,7 +54,7 @@ import path from 'path';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const ENABLED_STATES = ['CA', 'TX', 'NY', 'FL', 'IL'];
+const ENABLED_STATES = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC'];
 const BASE_URL = 'https://usmosques.com';
 
 // ─── A. State Eligibility ────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ const BASE_URL = 'https://usmosques.com';
 describe('PHASE 4C — National SEO & Topical Discovery', () => {
 
   describe('A. State eligibility', () => {
-    it('all 5 enabled states pass isStateEligibleForSeo', () => {
+    it('all 13 enabled states pass isStateEligibleForSeo', () => {
       for (const code of ENABLED_STATES) {
         expect(isStateEligibleForSeo(code), `${code} should be eligible`).toBe(true);
       }
@@ -453,13 +453,13 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
       }
     });
 
-    it('total excluded records across all states equals 3', async () => {
+    it('total excluded records across all states equals 6 (Phase 6 expanded)', async () => {
       let count = 0;
       for (const code of ENABLED_STATES) {
         const mosques = await mosqueRepository.getMosquesByState(code);
         count += mosques.filter(m => m.dataStatus === 'excluded').length;
       }
-      expect(count).toBe(3);
+      expect(count).toBe(6);
     });
   });
 
@@ -552,19 +552,19 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
       expect(unique.size).toBe(slugs.length);
     });
 
-    it('C. Total public entities count is 1,483', async () => {
+    it('C. Total public entities count is 2,587 (Phase 6 expanded)', async () => {
       const { mosques } = await mosqueRepository.search({ status: 'all', limit: 3000 });
       const public_ = mosques.filter(m => m.dataStatus !== 'excluded');
-      expect(public_.length).toBe(1483);
+      expect(public_.length).toBe(2587);
     });
 
-    it('D. Verified entity count is 1,379', async () => {
+    it('D. Verified entity count is 2,411 (Phase 6 expanded)', async () => {
       let count = 0;
       for (const code of ENABLED_STATES) {
         const mosques = await mosqueRepository.getMosquesByState(code);
         count += mosques.filter(m => m.dataStatus === 'verified').length;
       }
-      expect(count).toBe(1379);
+      expect(count).toBe(2411);
     });
   });
 
@@ -651,17 +651,31 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
   // ─── Z. Eligibility Service ───────────────────────────────────────────────
 
   describe('Z. Eligibility service — correct tier decisions', () => {
-    it('exactly 52 total eligible city directories across all 5 states', async () => {
+    it('exactly 96 total eligible city directories across all 13 states (Phase 6 expanded)', async () => {
       let total = 0;
       for (const code of ENABLED_STATES) {
         const cities = await cityRepository.getEligibleCities(code);
         total += cities.length;
       }
-      expect(total).toBe(52);
+      expect(total).toBe(96);
     });
 
-    it('CA has 14 eligible cities, TX has 16, NY has 13, FL has 6, IL has 3', async () => {
-      const expected: Record<string, number> = { CA: 14, TX: 16, NY: 13, FL: 6, IL: 3 };
+    it('eligible cities count per state', async () => {
+      const expected: Record<string, number> = {
+        CA: 14,
+        TX: 16,
+        NY: 13,
+        FL: 6,
+        IL: 3,
+        GA: 6,
+        NJ: 5,
+        MI: 6,
+        PA: 4,
+        MD: 3,
+        VA: 8,
+        OH: 5,
+        NC: 7,
+      };
       for (const [code, count] of Object.entries(expected)) {
         const cities = await cityRepository.getEligibleCities(code);
         expect(cities.length, `${code} eligible city count`).toBe(count);

@@ -5,14 +5,22 @@ import fs from 'fs';
 import path from 'path';
 
 describe('PHASE 3C.1 — Data Count Audit', () => {
-  it('reports exact counts for all 5 active states', async () => {
-    const states = ['CA', 'TX', 'NY', 'FL', 'IL'];
+  it('reports exact counts for all 13 active states (Phase 6 expanded)', async () => {
+    const states = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC'];
     const rawFiles: Record<string, string> = {
       CA: 'california.json',
       TX: 'texas.json',
       NY: 'new-york.json',
       FL: 'florida.json',
       IL: 'illinois.json',
+      GA: 'georgia.json',
+      NJ: 'new-jersey.json',
+      MI: 'michigan.json',
+      PA: 'pennsylvania.json',
+      MD: 'maryland.json',
+      VA: 'virginia.json',
+      OH: 'ohio.json',
+      NC: 'north-carolina.json',
     };
 
     let totalRaw = 0, totalVerified = 0, totalNeedsReview = 0, totalExcluded = 0, totalPublishable = 0;
@@ -51,7 +59,7 @@ describe('PHASE 3C.1 — Data Count Audit', () => {
 
   it('reports city eligibility counts per state', async () => {
     const { cityRepository } = await import('@/lib/data/city-repository');
-    const states = ['CA', 'TX', 'NY', 'FL', 'IL'];
+    const states = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC'];
     let totalEligible = 0;
     for (const code of states) {
       const eligible = await cityRepository.getEligibleCities(code);
@@ -63,7 +71,7 @@ describe('PHASE 3C.1 — Data Count Audit', () => {
   });
 
   it('verifies state isolation - no cross-state contamination', async () => {
-    const states = ['CA', 'TX', 'NY', 'FL', 'IL'];
+    const states = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC'];
     for (const code of states) {
       const all = await mosqueRepository.getMosquesByState(code);
       const wrongState = all.filter(m => m.stateCode !== code);
@@ -80,6 +88,14 @@ describe('PHASE 3C.1 — Data Count Audit', () => {
       NY: 'America/New_York',
       FL: 'America/New_York',
       IL: 'America/Chicago',
+      GA: 'America/New_York',
+      NJ: 'America/New_York',
+      MI: 'America/Detroit',
+      PA: 'America/New_York',
+      MD: 'America/New_York',
+      VA: 'America/New_York',
+      OH: 'America/New_York',
+      NC: 'America/New_York',
     };
     for (const [code, expectedTz] of Object.entries(expectedTimezones)) {
       const actual = getTimezoneForState(code);

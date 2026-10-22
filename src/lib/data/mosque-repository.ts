@@ -35,6 +35,15 @@ export class MosqueRepository implements IMosqueRepository {
     this.registerProvider(new GenericStateProvider('NY'));
     this.registerProvider(new GenericStateProvider('FL'));
     this.registerProvider(new GenericStateProvider('IL'));
+    // Phase 6: 8 new states
+    this.registerProvider(new GenericStateProvider('GA'));
+    this.registerProvider(new GenericStateProvider('NJ'));
+    this.registerProvider(new GenericStateProvider('MI'));
+    this.registerProvider(new GenericStateProvider('PA'));
+    this.registerProvider(new GenericStateProvider('MD'));
+    this.registerProvider(new GenericStateProvider('VA'));
+    this.registerProvider(new GenericStateProvider('OH'));
+    this.registerProvider(new GenericStateProvider('NC'));
   }
 
   private invalidateCanonicalIndex(): void {

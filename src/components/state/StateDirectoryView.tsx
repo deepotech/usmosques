@@ -90,6 +90,22 @@ export async function StateDirectoryView({ stateCode }: StateDirectoryViewProps)
             <span><strong className="text-slate-900">{eligibleCities.length}</strong> Major City Directories</span>
           </div>
         </div>
+
+        {/* Top City Hubs Quick Navigation */}
+        {eligibleCities.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-2 text-xs">
+            <span className="font-semibold text-slate-500">Popular Cities:</span>
+            {eligibleCities.slice(0, 4).map(c => (
+              <Link
+                key={c.slug}
+                href={`/mosques/${config.slug}/${c.slug}`}
+                className="rounded-full bg-slate-100 hover:bg-brand-100 px-3 py-1 font-medium text-slate-700 hover:text-brand-900 transition-colors"
+              >
+                {c.city} ({c.mosqueCount})
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Major City Hubs (Eligible Cities) */}

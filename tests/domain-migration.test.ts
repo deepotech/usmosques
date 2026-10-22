@@ -45,12 +45,45 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       expect(meta.alternates?.canonical).toBe(EXPECTED_CANONICAL_DOMAIN);
       expect(meta.openGraph?.url).toBe(EXPECTED_CANONICAL_DOMAIN);
     });
+
+    it('constructMetadata prevents duplicate brand suffix in title and OpenGraph', () => {
+      const layoutTemplate = typeof metadata.title === 'object' && metadata.title !== null && 'template' in metadata.title
+        ? String(metadata.title.template)
+        : '%s';
+
+      const meta = constructMetadata({
+        title: 'Mosques in Brooklyn, NY (103 Locations)',
+        description: 'Test description',
+      });
+
+      // constructMetadata must return clean title string without pre-appending brand
+      expect(meta.title).toBe('Mosques in Brooklyn, NY (103 Locations)');
+
+      // When Next.js applies the layout template (%s | US Mosque Finder), exactly one suffix is rendered
+      const renderedTitle = layoutTemplate.replace('%s', String(meta.title));
+      expect(renderedTitle).toBe('Mosques in Brooklyn, NY (103 Locations) | US Mosque Finder');
+      expect(renderedTitle).not.toContain('US Mosque Finder | US Mosque Finder');
+
+      // Defensive trimming: even if an input already has the brand suffix, it is stripped
+      const metaWithSuffix = constructMetadata({
+        title: 'Mosques in Brooklyn, NY (103 Locations) | US Mosque Finder',
+        description: 'Test description',
+      });
+      expect(metaWithSuffix.title).toBe('Mosques in Brooklyn, NY (103 Locations)');
+      const renderedFromSuffix = layoutTemplate.replace('%s', String(metaWithSuffix.title));
+      expect(renderedFromSuffix).toBe('Mosques in Brooklyn, NY (103 Locations) | US Mosque Finder');
+      expect(renderedFromSuffix).not.toContain('US Mosque Finder | US Mosque Finder');
+
+      // OpenGraph and Twitter have exactly one brand suffix
+      expect(meta.openGraph?.title).toBe('Mosques in Brooklyn, NY (103 Locations) | US Mosque Finder');
+      expect(meta.twitter?.title).toBe('Mosques in Brooklyn, NY (103 Locations) | US Mosque Finder');
+    });
   });
 
   describe('Phase 4: Sitemap Invariants', () => {
-    it('all sitemap URLs use https://usmosques.com and exactly match 1438', async () => {
+    it('all sitemap URLs use https://usmosques.com and exactly match 2522 (Phase 6 expanded)', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(1438);
+      expect(routes.length).toBe(2522);
 
       const oldDomainCount = routes.filter(r => r.url.includes('usmosquefinder.com')).length;
       expect(oldDomainCount).toBe(0);
@@ -60,7 +93,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
       // Verify no duplicates
       const uniqueUrls = new Set(routes.map(r => r.url));
-      expect(uniqueUrls.size).toBe(1438);
+      expect(uniqueUrls.size).toBe(2522);
     });
 
     it('sitemap excludes /mosque-near-me and needs_review/excluded records', async () => {
@@ -82,7 +115,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
     it('Phase 17 Cross-Check: every sitemap URL has matching canonical on usmosques.com and is not noindex', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(1438);
+      expect(routes.length).toBe(2522);
 
       const seen = new Set<string>();
       let duplicateCount = 0;
@@ -101,7 +134,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       expect(duplicateCount).toBe(0);
       expect(nonCanonicalHostCount).toBe(0);
       expect(noindexCount).toBe(0);
-      expect(seen.size).toBe(1438);
+      expect(seen.size).toBe(2522);
     });
   });
 
@@ -216,25 +249,25 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       const needsReview = allMosques.filter(m => m.dataStatus === 'needs_review');
       const excluded = allMosques.filter(m => m.dataStatus === 'excluded');
 
-      expect(verified.length).toBe(1379);
-      expect(needsReview.length).toBe(104);
-      expect(excluded.length).toBe(3);
-      expect(allMosques.length).toBe(1486);
+      expect(verified.length).toBe(2411);
+      expect(needsReview.length).toBe(176);
+      expect(excluded.length).toBe(6);
+      expect(allMosques.length).toBe(2593);
 
       let eligibleCityCount = 0;
       for (const s of states) {
         const cities = await cityRepository.getEligibleCities(s.code);
         eligibleCityCount += cities.length;
       }
-      expect(eligibleCityCount).toBe(52);
+      expect(eligibleCityCount).toBe(96);
 
       const staticPages = 2; // / and /about
-      const statePages = states.length; // 5
+      const statePages = states.length; // 13
       const totalIndexable = staticPages + statePages + eligibleCityCount + verified.length;
-      expect(totalIndexable).toBe(1438);
+      expect(totalIndexable).toBe(2522);
 
-      const totalNoindex = 1 + needsReview.length; // /mosque-near-me + 104 needs_review
-      expect(totalNoindex).toBe(105);
+      const totalNoindex = 1 + needsReview.length; // /mosque-near-me + 176 needs_review
+      expect(totalNoindex).toBe(177);
     });
   });
 });

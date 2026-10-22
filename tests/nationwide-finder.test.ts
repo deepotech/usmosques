@@ -147,9 +147,9 @@ describe('Phase 3D — Nationwide / Regional Finder & Discovery Tests', () => {
 
   // 12. Verified filtering
   it('12. filters strictly to verified mosques when status=verified', async () => {
-    const { mosques, total } = await mosqueRepository.search({ status: 'verified', limit: 2000 });
+    const { mosques, total } = await mosqueRepository.search({ status: 'verified', limit: 3000 });
     expect(mosques.every(m => m.dataStatus === 'verified')).toBe(true);
-    expect(total).toBe(1379);
+    expect(total).toBe(2411);
   });
 
   // 13. Progressive result behavior / pagination

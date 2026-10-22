@@ -76,7 +76,9 @@ export async function StateCityView({ stateCode, citySlug }: StateCityViewProps)
           Mosques in {city.city}, {config.name}
         </h1>
         <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
-          Find mosques and Islamic centers in {city.city}, {config.name}. Browse locations, contact details, hours when available, websites, and driving directions.
+          {city.slug === 'brooklyn' && config.code === 'NY'
+            ? `Find mosques and Islamic centers across Brooklyn (Kings County), New York. Browse locations, contact details, hours when available, websites, and driving directions.`
+            : `Find mosques and Islamic centers in ${city.city}, ${config.name}. Browse locations, contact details, hours when available, websites, and driving directions.`}
         </p>
 
         {/* Factual City Statistics Banner */}

@@ -1,6 +1,7 @@
 import { RawMosqueRecord } from './validation';
 import { Mosque, MosqueDataStatus, MosqueOpeningHourDay } from '@/types/mosque';
 import { getStateConfig, normalizeStateCode } from '@/lib/config/state-registry';
+import { getEntityStatusOverride } from './entity-overrides';
 
 /**
  * Creates a URL-friendly, safe slug from mosque name and city/id
@@ -88,6 +89,12 @@ export function determineDataStatus(
   raw: RawMosqueRecord,
   isSharedAddress = false
 ): { status: MosqueDataStatus; reason?: string } {
+  // Check targeted empirical entity overrides first
+  const override = getEntityStatusOverride(raw.cid, raw.placeId);
+  if (override) {
+    return { status: override.overrideStatus, reason: override.reason };
+  }
+
   const catNameLower = (raw.categoryName || '').toLowerCase();
   const allCats = (raw.categories || []).map(c => c.toLowerCase());
   const titleLower = raw.title.toLowerCase();

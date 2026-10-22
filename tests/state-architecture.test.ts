@@ -43,9 +43,9 @@ describe('Phase 3A: State Registry & Configuration', () => {
     expect(fl?.enabled).toBe(true); // Activated in Phase 3C
   });
 
-  it('enforces that CA, TX, NY, FL, and IL are currently enabled (Phase 3C)', () => {
+  it('enforces that CA, TX, NY, FL, IL, GA, NJ, MI, PA, MD, VA, OH, NC are currently enabled (Phase 6)', () => {
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(5);
+    expect(enabled.length).toBe(13);
     const codes = enabled.map(s => s.code);
     expect(codes).toContain('CA');
     expect(codes).toContain('TX');
@@ -56,6 +56,15 @@ describe('Phase 3A: State Registry & Configuration', () => {
     expect(isStateEnabled('NY')).toBe(true);
     expect(isStateEnabled('FL')).toBe(true); // Activated in Phase 3C
     expect(isStateEnabled('IL')).toBe(true); // Activated in Phase 3C
+    // Phase 6: 8 new states
+    expect(isStateEnabled('GA')).toBe(true);
+    expect(isStateEnabled('NJ')).toBe(true);
+    expect(isStateEnabled('MI')).toBe(true);
+    expect(isStateEnabled('PA')).toBe(true);
+    expect(isStateEnabled('MD')).toBe(true);
+    expect(isStateEnabled('VA')).toBe(true);
+    expect(isStateEnabled('OH')).toBe(true);
+    expect(isStateEnabled('NC')).toBe(true);
   });
 
   it('falls back to default state (California) for unknown inputs', () => {
@@ -240,9 +249,9 @@ describe('Phase 3A: GenericStateProvider & MosqueRepository Isolation', () => {
     expect(caMosques.length).toBeGreaterThan(300);
     expect(caMosques.every(m => m.stateCode === 'CA')).toBe(true);
 
-    // Default search (no stateCode) queries only ENABLED states (CA, TX, NY, FL, IL)
+    // Default search (no stateCode) queries only ENABLED states (13 states in Phase 6)
     const defaultSearch = await repo.search({});
-    const enabledCodes = new Set(['CA', 'TX', 'NY', 'FL', 'IL']);
+    const enabledCodes = new Set(['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC']);
     expect(defaultSearch.mosques.every(m => enabledCodes.has(m.stateCode))).toBe(true);
 
     // Search explicitly scoped to CA returns only CA

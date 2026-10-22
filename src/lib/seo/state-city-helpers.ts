@@ -26,9 +26,22 @@ export async function generateStateCityMetadata(stateCode: string, citySlug: str
     };
   }
 
+  // Base title and description
+  let title = `Mosques in ${city.city}, ${city.stateCode} (${city.mosqueCount} Locations)`;
+  let description = `Find ${city.mosqueCount} verified mosques and Islamic centers in ${city.city}, ${city.state}. Browse locations, contact details, hours when available, websites, and driving directions.`;
+
+  // Specific evidence-substantiated city optimizations
+  if (city.stateCode === 'CA' && city.slug === 'sacramento') {
+    title = `Mosques in Sacramento, CA (${city.mosqueCount} Masajid & Centers)`;
+    description = `Discover ${city.mosqueCount} verified mosques and Islamic centers in Sacramento, CA. Access direct contact numbers, published hours when available, websites, and driving directions.`;
+  } else if (city.stateCode === 'NY' && city.slug === 'brooklyn') {
+    title = `Mosques in Brooklyn, NY (${city.mosqueCount} Locations)`;
+    description = `Explore ${city.mosqueCount} verified mosques and Islamic centers across Brooklyn (Kings County), NY. Browse locations, contact details, hours when available, and driving directions.`;
+  }
+
   return constructMetadata({
-    title: `Mosques in ${city.city}, ${city.stateCode} (${city.mosqueCount} Locations)`,
-    description: `Find ${city.mosqueCount} verified mosques and Islamic centers in ${city.city}, ${city.state}. Browse locations, contact details, hours when available, websites, and driving directions.`,
+    title,
+    description,
     canonical: `/mosques/${config.slug}/${city.slug}`,
   });
 }
