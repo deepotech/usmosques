@@ -1,8 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Compass, ShieldCheck } from 'lucide-react';
+import { getEnabledStates } from '@/lib/config/state-registry';
 
 export function Footer() {
+  const enabledStates = getEnabledStates();
   return (
     <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -29,32 +31,14 @@ export function Footer() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
               State Directories
             </h3>
-            <ul className="mt-4 space-y-2 text-sm text-slate-400">
-              <li>
-                <Link href="/mosques/california" className="hover:text-white transition-colors">
-                  California
-                </Link>
-              </li>
-              <li>
-                <Link href="/mosques/texas" className="hover:text-white transition-colors">
-                  Texas
-                </Link>
-              </li>
-              <li>
-                <Link href="/mosques/new-york" className="hover:text-white transition-colors">
-                  New York
-                </Link>
-              </li>
-              <li>
-                <Link href="/mosques/florida" className="hover:text-white transition-colors">
-                  Florida
-                </Link>
-              </li>
-              <li>
-                <Link href="/mosques/illinois" className="hover:text-white transition-colors">
-                  Illinois
-                </Link>
-              </li>
+            <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-slate-400">
+              {enabledStates.map(state => (
+                <li key={state.code}>
+                  <Link href={`/mosques/${state.slug}`} className="hover:text-white transition-colors">
+                    {state.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
