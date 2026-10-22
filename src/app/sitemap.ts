@@ -39,6 +39,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/privacy`,
+      lastModified: BUILD_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/terms`,
+      lastModified: BUILD_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/contact`,
+      lastModified: BUILD_DATE,
+      changeFrequency: 'monthly',
+      priority: 0.4,
+    },
   ];
 
   // Dynamic state hub routes for enabled states only (e.g. /mosques/california)

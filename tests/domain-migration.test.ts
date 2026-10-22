@@ -81,9 +81,9 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
   });
 
   describe('Phase 4: Sitemap Invariants', () => {
-    it('all sitemap URLs use https://usmosques.com and exactly match 2522 (Phase 6 expanded)', async () => {
+    it('all sitemap URLs use https://usmosques.com and exactly match 2525 (Phase 6 expanded)', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(2522);
+      expect(routes.length).toBe(2525);
 
       const oldDomainCount = routes.filter(r => r.url.includes('usmosquefinder.com')).length;
       expect(oldDomainCount).toBe(0);
@@ -93,7 +93,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
       // Verify no duplicates
       const uniqueUrls = new Set(routes.map(r => r.url));
-      expect(uniqueUrls.size).toBe(2522);
+      expect(uniqueUrls.size).toBe(2525);
     });
 
     it('sitemap excludes /mosque-near-me and needs_review/excluded records', async () => {
@@ -115,7 +115,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
     it('Phase 17 Cross-Check: every sitemap URL has matching canonical on usmosques.com and is not noindex', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(2522);
+      expect(routes.length).toBe(2525);
 
       const seen = new Set<string>();
       let duplicateCount = 0;
@@ -134,7 +134,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       expect(duplicateCount).toBe(0);
       expect(nonCanonicalHostCount).toBe(0);
       expect(noindexCount).toBe(0);
-      expect(seen.size).toBe(2522);
+      expect(seen.size).toBe(2525);
     });
   });
 

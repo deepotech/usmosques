@@ -199,11 +199,19 @@ export async function StateCityView({ stateCode, citySlug }: StateCityViewProps)
       )}
 
       {/* Trust & Methodology Footer */}
-      <div className="flex items-center gap-2 text-xs text-slate-500 pt-4 border-t border-slate-200">
-        <ShieldCheck className="h-4 w-4 text-brand-700 flex-shrink-0" />
-        <span>
-          Directory figures reflect authentic public listings. Excluded non-mosque entities are filtered from counts.
-        </span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-500 pt-4 border-t border-slate-200">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-brand-700 flex-shrink-0" />
+          <span>
+            Directory figures reflect authentic public listings. Excluded non-mosque entities are filtered from counts.
+          </span>
+        </div>
+        <Link
+          href={`/contact?mosque=${encodeURIComponent(city.city + ', ' + config.code + ' Directory')}`}
+          className="text-brand-700 hover:text-brand-900 hover:underline font-medium shrink-0"
+        >
+          Suggest an update for {city.city} &rarr;
+        </Link>
       </div>
     </div>
   );

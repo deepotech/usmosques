@@ -22,7 +22,7 @@ export default function AboutPage() {
           About US Mosque Finder
         </h1>
         <p className="mt-3 text-base text-slate-600 leading-relaxed">
-          US Mosque Finder was created to provide a fast, clean, trustworthy, and ad-free directory of verified mosques and Islamic centers across America.
+          US Mosque Finder was created to provide a fast, clean, and trustworthy directory of verified mosques and Islamic centers across America.
         </p>
       </div>
 

@@ -207,13 +207,13 @@ describe('Phase 6: 8 New States Activation & Quality Verification', () => {
     expect(slugs.size).toBe(2587);
   });
 
-  // 12. Sitemap contains exactly 2522 URLs, no duplicates, no noindex
+  // 12. Sitemap contains exactly 2525 URLs, no duplicates, no noindex
   it('12. Sitemap includes verified mosques and eligible cities, excluding needs_review and /mosque-near-me', async () => {
     const routes = await sitemap();
-    expect(routes.length).toBe(2522);
+    expect(routes.length).toBe(2525);
 
     const urls = new Set(routes.map(r => r.url));
-    expect(urls.size).toBe(2522);
+    expect(urls.size).toBe(2525);
 
     // /mosque-near-me excluded
     expect(urls.has('https://usmosques.com/mosque-near-me')).toBe(false);

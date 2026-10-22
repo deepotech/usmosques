@@ -363,3 +363,13 @@ export function normalizeMosqueDataset(records: RawMosqueRecord[]): Mosque[] {
     normalizeMosqueRecord(record, idx, existingSlugs, sharedAddressSet)
   );
 }
+
+/**
+ * Sanitize mosque name from user inputs or query parameters.
+ * Strips HTML tags, trims whitespace, and truncates to 200 characters.
+ */
+export function sanitizeMosqueName(raw: string | undefined): string {
+  if (!raw) return '';
+  const stripped = raw.replace(/<[^>]*>/g, '').trim();
+  return stripped.slice(0, 200);
+}

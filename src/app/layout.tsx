@@ -46,6 +46,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased">
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6331163447795368"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="flex min-h-full flex-col bg-slate-50 text-slate-900 selection:bg-brand-100 selection:text-brand-900">
         <Header />
         <main className="flex-1">{children}</main>

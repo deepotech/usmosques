@@ -8,7 +8,7 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-slate-900 text-slate-300">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-700 text-white">
@@ -70,6 +70,34 @@ export function Footer() {
               <li>
                 <Link href="/mosques/florida/tampa" className="hover:text-white transition-colors">
                   Tampa, FL
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
+              About &amp; Legal
+            </h3>
+            <ul className="mt-4 space-y-2 text-sm text-slate-400">
+              <li>
+                <Link href="/about" className="hover:text-white transition-colors">
+                  About
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="hover:text-white transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-white transition-colors">
+                  Terms of Use
                 </Link>
               </li>
             </ul>

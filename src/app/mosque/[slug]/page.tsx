@@ -360,7 +360,7 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
           )}
 
           {/* Data Transparency & Source */}
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-xs text-slate-600 space-y-2">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-xs text-slate-600 space-y-3">
             <div className="flex items-center gap-1.5 font-bold text-slate-800">
               <ShieldCheck className="h-4 w-4 text-brand-700" />
               Listing Data Transparency
@@ -369,6 +369,16 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
               This listing is compiled from verified public records. Status: <strong className="capitalize">{mosque.dataStatus.replace('_', ' ')}</strong>.
             </p>
             {mosque.statusReason && <p className="italic text-slate-500">{mosque.statusReason}</p>}
+            <div className="pt-2 border-t border-slate-200/70">
+              <Link
+                href={`/contact?mosque=${encodeURIComponent(mosque.name)}`}
+                className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:text-brand-800 hover:underline"
+                aria-label={`Suggest an update or report incorrect details for ${mosque.name}`}
+              >
+                <span>Suggest an update or report closed facility</span>
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
