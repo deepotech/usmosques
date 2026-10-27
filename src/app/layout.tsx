@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { GoogleAnalytics } from '@next/third-parties/google';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import './globals.css';
@@ -58,6 +59,10 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
       </body>
+      {/* GA4: only rendered when a valid-looking Measurement ID is provided via env var */}
+      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.startsWith('G-') && (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+      )}
     </html>
   );
 }

@@ -62,9 +62,57 @@ export default function PrivacyPage() {
 
         {/* Section 5 */}
         <section className="space-y-2">
-          <h2 className="text-base font-bold text-slate-900">5. Cookies</h2>
+          <h2 className="text-base font-bold text-slate-900">5. Cookies and Analytics</h2>
           <p>
-            We do not use tracking cookies, analytics cookies, or advertising cookies on this site at this time. No first-party or third-party cookies are set through normal browsing of the directory.
+            <strong>Google Analytics 4 (GA4):</strong> This site uses Google Analytics 4 to collect anonymised information about how visitors use the site — for example, which pages are visited, how long visitors stay, and which country traffic comes from. This data helps us understand usage patterns and improve the directory.
+          </p>
+          <p>
+            Google Analytics sets one or more cookies (such as <code>_ga</code> and <code>_ga_*</code>) in your browser to distinguish visitors and report aggregated statistics. These cookies are set by Google LLC, a third party, not directly by this site.
+          </p>
+          <p>
+            The data collected by Google Analytics is processed by Google in accordance with{' '}
+            <a
+              href="https://policies.google.com/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900"
+            >
+              Google&apos;s Privacy Policy
+            </a>
+            . You can opt out of Google Analytics tracking at any time by installing the{' '}
+            <a
+              href="https://tools.google.com/dlpage/gaoptout"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900"
+            >
+              Google Analytics Opt-out Browser Add-on
+            </a>
+            , or by using your browser&apos;s built-in privacy or &ldquo;Do Not Track&rdquo; controls.
+          </p>
+          <p>
+            <strong>Google AdSense:</strong> This site also loads Google AdSense, which may set advertising-related cookies to display relevant ads and measure ad performance. AdSense is operated by Google LLC. Please refer to{' '}
+            <a
+              href="https://policies.google.com/technologies/ads"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900"
+            >
+              Google&apos;s Advertising Privacy Policy
+            </a>{' '}
+            for full details. You can manage interest-based advertising preferences via{' '}
+            <a
+              href="https://adssettings.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900"
+            >
+              Google Ad Settings
+            </a>
+            .
+          </p>
+          <p>
+            No cookie consent banner is currently displayed on this site. If you do not wish analytics or advertising cookies to be set, please use your browser&apos;s cookie controls or the opt-out links above before or during your visit.
           </p>
         </section>
 
@@ -78,12 +126,30 @@ export default function PrivacyPage() {
 
         {/* Section 7 */}
         <section className="space-y-2">
-          <h2 className="text-base font-bold text-slate-900">7. Future Advertising</h2>
+          <h2 className="text-base font-bold text-slate-900">7. Advertising</h2>
           <p>
-            We may introduce third-party advertising services (such as Google AdSense) in the future to help support the maintenance and development of this directory. If we do, this privacy policy will be updated in advance to explain which advertising cookies may be set, what data may be shared with advertising partners, how to opt out of interest-based advertising, and how Google&apos;s advertising cookies work.
+            This site uses <strong>Google AdSense</strong> to display advertisements. AdSense is operated by Google LLC and may use cookies and similar technologies to show ads based on your interests and browsing activity across the web. These are third-party cookies set by Google, not by this site.
           </p>
           <p>
-            We will not activate any advertising service without first updating this policy and, where required by law, obtaining appropriate user consent.
+            You can opt out of personalised advertising by visiting{' '}
+            <a
+              href="https://adssettings.google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900 font-medium"
+            >
+              Google Ad Settings
+            </a>
+            {' '}or by using the{' '}
+            <a
+              href="https://optout.aboutads.info/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-700 underline hover:text-brand-900 font-medium"
+            >
+              Digital Advertising Alliance opt-out tool
+            </a>
+            .
           </p>
         </section>
 
