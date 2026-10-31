@@ -23,7 +23,7 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-2 text-xs text-brand-400 font-medium">
               <ShieldCheck className="h-4 w-4" />
-              <span>Independent & Community-Verified Local Data</span>
+              <span>Independent directory. Publicly sourced data.</span>
             </div>
           </div>
 

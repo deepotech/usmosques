@@ -133,10 +133,10 @@ export default async function HomePage() {
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <h2 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
-            A Serious Local Utility for Muslims &amp; Visitors
+            A Practical Directory for Muslims &amp; Visitors
           </h2>
           <p className="mt-3 text-sm text-slate-600">
-            We focus on clean, verified local information without clutter or advertisements.
+            USMosques.com helps people discover mosques, Islamic centers, and prayer facilities across the United States through searchable local listings and practical location information.
           </p>
         </div>
 

@@ -165,7 +165,9 @@ describe('PHASE A — Trust & Legal Pages', () => {
     });
 
     it('About page source still contains the expected replacement text', () => {
-      expect(aboutSource).toContain('fast, clean, and trustworthy directory');
+      // Updated in Phase 1 remediation: About page rewritten for editorial transparency.
+      // Verifies the page contains its new introductory statement.
+      expect(aboutSource).toContain('independent online directory designed to help people locate mosques');
     });
   });
 
