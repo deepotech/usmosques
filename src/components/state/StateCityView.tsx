@@ -4,6 +4,7 @@ import { getStateConfig, isStateEnabled } from '@/lib/config/state-registry';
 import { cityRepository } from '@/lib/data/city-repository';
 import { generateBreadcrumbSchema, generateCityCollectionSchema } from '@/lib/seo/schema';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
+import { getCityEditorial } from '@/lib/data/editorial-content';
 import {
   Building2,
   Clock,
@@ -13,6 +14,8 @@ import {
   MapPin,
   ShieldCheck,
   Compass,
+  BookOpen,
+  Info,
 } from 'lucide-react';
 
 interface StateCityViewProps {
@@ -30,6 +33,8 @@ export async function StateCityView({ stateCode, citySlug }: StateCityViewProps)
   if (!city) {
     notFound();
   }
+
+  const cityEditorial = getCityEditorial(stateCode, city.slug);
 
   const relatedCities = await cityRepository.getRelatedEligibleCities(city.slug, 6, stateCode);
 
@@ -76,10 +81,21 @@ export async function StateCityView({ stateCode, citySlug }: StateCityViewProps)
           Mosques in {city.city}, {config.name}
         </h1>
         <p className="mt-3 text-sm sm:text-base text-slate-600 max-w-3xl leading-relaxed">
-          {city.slug === 'brooklyn' && config.code === 'NY'
+          {cityEditorial
+            ? cityEditorial.overview
+            : city.slug === 'brooklyn' && config.code === 'NY'
             ? `Find mosques and Islamic centers across Brooklyn (Kings County), New York. Browse locations, contact details, hours when available, websites, and driving directions.`
             : `Find mosques and Islamic centers in ${city.city}, ${config.name}. Browse locations, contact details, hours when available, websites, and driving directions.`}
         </p>
+
+        <div className="mt-3 flex items-center sm:hidden">
+          <a
+            href="#mosque-directory"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800 hover:underline"
+          >
+            Skip to {city.mosques.length} mosque listings &darr;
+          </a>
+        </div>
 
         {/* Factual City Statistics Banner */}
         <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -119,17 +135,66 @@ export async function StateCityView({ stateCode, citySlug }: StateCityViewProps)
             <p className="text-[11px] text-slate-500">Official website links</p>
           </div>
         </div>
+
+        {/* Local Community Guide & Editorial Context (Pilot Enhanced) */}
+        {cityEditorial && (
+          <div className="mt-8 pt-6 border-t border-slate-100 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4 text-brand-700" />
+                <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                  {cityEditorial.headline}
+                </h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-semibold text-brand-800 border border-brand-200">
+                  <BookOpen className="h-3 w-3 text-brand-700" />
+                  Editorial City Guide • Updated {cityEditorial.verification.verifiedDate}
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  Source: {cityEditorial.verification.sourceName}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700 leading-relaxed">
+              <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2">
+                <strong className="text-slate-900 block font-bold text-sm">
+                  Community &amp; Cultural Heritage
+                </strong>
+                <p>{cityEditorial.communityContext}</p>
+              </div>
+
+              <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 space-y-2">
+                <strong className="text-slate-900 block font-bold text-sm">
+                  Geographic Coverage &amp; Corridors
+                </strong>
+                <p>{cityEditorial.geographicDistribution}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-brand-50/60 p-4 border border-brand-200/60 text-xs text-brand-950 leading-relaxed flex items-start gap-2.5">
+              <Info className="h-4 w-4 text-brand-700 shrink-0 mt-0.5" />
+              <div>
+                <strong className="block font-bold mb-0.5">Directory Guidance &amp; Coverage Notice:</strong>
+                <p className="text-brand-900">{cityEditorial.dataNotice}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mosque Cards List */}
-      <section className="space-y-6">
+      <section id="mosque-directory" className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
               All Listed Mosques in {city.city}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Showing {city.mosques.length} verified and recognized facilities
+              {city.needsReviewCount > 0
+                ? `Showing ${city.mosques.length} listed facilities (${city.verifiedCount} verified, ${city.needsReviewCount} under review)`
+                : `Showing ${city.mosques.length} verified facilities`}
             </p>
           </div>
 

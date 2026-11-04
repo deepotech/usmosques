@@ -14,6 +14,7 @@ import { MosqueStatusBadge } from '@/components/mosque/MosqueStatusBadge';
 import { RatingSummary } from '@/components/mosque/RatingSummary';
 import { ActionButtons } from '@/components/mosque/ActionButtons';
 import { MosqueCard } from '@/components/mosque/MosqueCard';
+import { getMosqueEditorial } from '@/lib/data/editorial-content';
 import {
   MapPin,
   Clock,
@@ -23,7 +24,40 @@ import {
   Accessibility,
   Sparkles,
   Info,
+  CheckCircle2,
+  BookOpen,
+  ExternalLink,
 } from 'lucide-react';
+
+function getFacilityClassificationLabel(mosque: { name: string; categoryName?: string; categories?: string[] }): string {
+  const nameLower = mosque.name.toLowerCase();
+  const catLower = (mosque.categoryName || '').toLowerCase();
+  const allCats = (mosque.categories || []).map(c => c.toLowerCase());
+
+  if (
+    nameLower.includes('musalla') ||
+    nameLower.includes('prayer room') ||
+    nameLower.includes('prayer space') ||
+    allCats.some(c => c.includes('musalla'))
+  ) {
+    return 'Recognized Musalla';
+  }
+  if (
+    nameLower.includes('islamic center') ||
+    nameLower.includes('community center') ||
+    nameLower.includes('cultural center') ||
+    nameLower.includes('society') ||
+    nameLower.includes('association') ||
+    nameLower.includes('foundation') ||
+    catLower.includes('community center')
+  ) {
+    return 'Recognized Islamic Center';
+  }
+  if (nameLower.includes('masjid') || nameLower.includes('mosque') || catLower.includes('mosque')) {
+    return 'Recognized Mosque';
+  }
+  return 'Recognized Place of Worship';
+}
 
 interface MosqueDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -64,10 +98,15 @@ export async function generateMetadata({ params }: MosqueDetailPageProps): Promi
   // They have not been fully validated and indexing them risks quality signals.
   // noindex,follow allows crawlers to still discover canonical pages via links.
   const noIndex = mosque.dataStatus !== 'verified';
+  const editorial = getMosqueEditorial(slug);
+
+  const description = editorial
+    ? `${editorial.facilityName} in ${mosque.city}, ${mosque.stateCode}. ${editorial.headline}. View directions, hours, confirmed services, and visitor guidance.`
+    : `Official information for ${mosque.name} located at ${mosque.address}. View directions, contact phone number, website, opening hours, and prayer amenities.`;
 
   return constructMetadata({
     title: `${mosque.name} in ${mosque.city}, ${mosque.stateCode}`,
-    description: `Official information for ${mosque.name} located at ${mosque.address}. View directions, contact phone number, website, opening hours, and prayer amenities.`,
+    description,
     canonical: getMosquePath(mosque),
     ogImage: mosque.imageUrl,
     noIndex,
@@ -89,6 +128,8 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
   if (!mosque) {
     notFound();
   }
+
+  const editorial = getMosqueEditorial(mosque.slug);
 
   // Find nearby mosques within 30 miles
   const nearbyMosques = (
@@ -196,9 +237,12 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
                 state={mosque.state}
               />
               {mosque.dataStatus === 'verified' && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700">
-                  <ShieldCheck className="h-3.5 w-3.5 text-brand-700" />
-                  Verified Facility
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-700"
+                  title="Cataloged as an authentic Islamic place of worship in public directory records"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-brand-700" />
+                  {getFacilityClassificationLabel(mosque)}
                 </span>
               )}
             </div>
@@ -305,13 +349,100 @@ export default async function MosqueDetailPage({ params }: MosqueDetailPageProps
             </div>
           )}
 
-          {/* Description if present */}
-          {mosque.description && (
+          {/* Editorial Community Profile or Basic Description */}
+          {editorial ? (
+            <div className="rounded-2xl border border-brand-200 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-brand-700" />
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                    Facility Overview &amp; Community Profile
+                  </h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-semibold text-brand-800 border border-brand-200">
+                    <BookOpen className="h-3 w-3 text-brand-700" />
+                    Editorial Information Reviewed • {editorial.verification.verifiedDate}
+                  </span>
+                  {editorial.verification.sourceUrl && (
+                    <a
+                      href={editorial.verification.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2.5 py-0.5 text-[11px] font-medium text-brand-700 hover:text-brand-800 hover:underline border border-slate-200 transition-colors"
+                      title={`Open cited source: ${editorial.verification.sourceName}`}
+                    >
+                      <ExternalLink className="h-3 w-3 text-slate-400" />
+                      Source
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-base font-bold text-slate-900 mb-2">
+                  {editorial.headline}
+                </h3>
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {editorial.summary}
+                </p>
+              </div>
+
+              {editorial.locationContext && (
+                <div className="rounded-xl bg-slate-50 p-4 border border-slate-100 text-xs text-slate-600 leading-relaxed">
+                  <strong className="text-slate-900 block mb-1">Location &amp; Surrounding Area:</strong>
+                  {editorial.locationContext}
+                </div>
+              )}
+
+              {editorial.confirmedServices && editorial.confirmedServices.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-brand-600" /> Confirmed Programs &amp; Services
+                  </h4>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
+                    {editorial.confirmedServices.map(service => (
+                      <li key={service} className="flex items-start gap-2 bg-slate-50/70 p-2.5 rounded-lg border border-slate-100">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-brand-600 shrink-0 mt-0.5" />
+                        <span>{service}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {editorial.confirmedAmenities && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                  {editorial.confirmedAmenities.parking && (
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                      <strong className="text-slate-900 block mb-1">Parking Availability:</strong>
+                      <span className="text-slate-600 leading-relaxed">{editorial.confirmedAmenities.parking}</span>
+                    </div>
+                  )}
+                  {editorial.confirmedAmenities.prayerSpace && (
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                      <strong className="text-slate-900 block mb-1">Prayer Space &amp; Wudu:</strong>
+                      <span className="text-slate-600 leading-relaxed">{editorial.confirmedAmenities.prayerSpace}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {editorial.visitorGuidance && (
+                <div className="rounded-xl bg-amber-50/70 p-4 border border-amber-200/60 text-xs text-amber-900 leading-relaxed">
+                  <strong className="block font-bold text-amber-950 mb-1 flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 text-amber-700" /> Practical Visitor Guidance:
+                  </strong>
+                  {editorial.visitorGuidance}
+                </div>
+              )}
+            </div>
+          ) : mosque.description ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
               <h2 className="text-lg font-bold text-slate-900 mb-3">About {mosque.name}</h2>
               <p className="text-sm text-slate-600 leading-relaxed">{mosque.description}</p>
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Right Sidebar: Location & Map Affordance */}

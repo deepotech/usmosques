@@ -48,10 +48,10 @@ export function MosqueCard({
             {mosque.dataStatus === 'verified' && (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-inset ring-slate-400/20"
-                title="Listing verified against public directory records"
+                title="Cataloged as an authentic Islamic place of worship in directory records"
               >
                 <CheckCircle2 className="h-3 w-3 text-brand-600" />
-                Verified listing
+                Recognized listing
               </span>
             )}
             {isSelected && (
