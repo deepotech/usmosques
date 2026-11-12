@@ -43,9 +43,9 @@ describe('Phase 3A: State Registry & Configuration', () => {
     expect(fl?.enabled).toBe(true); // Activated in Phase 3C
   });
 
-  it('enforces that CA, TX, NY, FL, IL, GA, NJ, MI, PA, MD, VA, OH, NC are currently enabled (Phase 6)', () => {
+  it('enforces that CA, TX, NY, FL, IL, GA, NJ, MI, PA, MD, VA, OH, NC, CO, AZ, MA, MN are currently enabled (Phase 37)', () => {
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(13);
+    expect(enabled.length).toBe(17);
     const codes = enabled.map(s => s.code);
     expect(codes).toContain('CA');
     expect(codes).toContain('TX');
@@ -65,6 +65,11 @@ describe('Phase 3A: State Registry & Configuration', () => {
     expect(isStateEnabled('VA')).toBe(true);
     expect(isStateEnabled('OH')).toBe(true);
     expect(isStateEnabled('NC')).toBe(true);
+    // Phase 37: 4 new states
+    expect(isStateEnabled('CO')).toBe(true);
+    expect(isStateEnabled('AZ')).toBe(true);
+    expect(isStateEnabled('MA')).toBe(true);
+    expect(isStateEnabled('MN')).toBe(true);
   });
 
   it('falls back to default state (California) for unknown inputs', () => {
@@ -249,9 +254,9 @@ describe('Phase 3A: GenericStateProvider & MosqueRepository Isolation', () => {
     expect(caMosques.length).toBeGreaterThan(300);
     expect(caMosques.every(m => m.stateCode === 'CA')).toBe(true);
 
-    // Default search (no stateCode) queries only ENABLED states (13 states in Phase 6)
+    // Default search (no stateCode) queries only ENABLED states (17 states in Phase 37)
     const defaultSearch = await repo.search({});
-    const enabledCodes = new Set(['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC']);
+    const enabledCodes = new Set(['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC', 'CO', 'AZ', 'MA', 'MN']);
     expect(defaultSearch.mosques.every(m => enabledCodes.has(m.stateCode))).toBe(true);
 
     // Search explicitly scoped to CA returns only CA

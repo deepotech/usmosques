@@ -42,10 +42,10 @@ describe('Phase 3C: Florida & Illinois Activation', () => {
     expect(il?.datasetPath).toBe('data/raw/illinois.json');
   });
 
-  // 3. Total enabled states are now 13
-  it('3. Total enabled states have grown to 13 (CA, TX, NY, FL, IL + 8 new Phase 6)', () => {
+  // 3. Total enabled states are now 17
+  it('3. Total enabled states have grown to 17 (CA, TX, NY, FL, IL + 8 Phase 6 + 4 Phase 37)', () => {
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(13);
+    expect(enabled.length).toBe(17);
     const codes = enabled.map(s => s.code);
     expect(codes).toContain('CA');
     expect(codes).toContain('TX');
@@ -61,6 +61,11 @@ describe('Phase 3C: Florida & Illinois Activation', () => {
     expect(codes).toContain('VA');
     expect(codes).toContain('OH');
     expect(codes).toContain('NC');
+    // Phase 37
+    expect(codes).toContain('CO');
+    expect(codes).toContain('AZ');
+    expect(codes).toContain('MA');
+    expect(codes).toContain('MN');
   });
 
   // 4. Dormant states remain disabled (CT, IN, SC)

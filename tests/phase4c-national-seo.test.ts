@@ -54,7 +54,7 @@ import path from 'path';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const ENABLED_STATES = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC'];
+const ENABLED_STATES = ['CA', 'TX', 'NY', 'FL', 'IL', 'GA', 'NJ', 'MI', 'PA', 'MD', 'VA', 'OH', 'NC', 'CO', 'AZ', 'MA', 'MN'];
 const BASE_URL = 'https://usmosques.com';
 
 // ─── A. State Eligibility ────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ const BASE_URL = 'https://usmosques.com';
 describe('PHASE 4C — National SEO & Topical Discovery', () => {
 
   describe('A. State eligibility', () => {
-    it('all 13 enabled states pass isStateEligibleForSeo', () => {
+    it('all 17 enabled states pass isStateEligibleForSeo', () => {
       for (const code of ENABLED_STATES) {
         expect(isStateEligibleForSeo(code), `${code} should be eligible`).toBe(true);
       }
@@ -552,19 +552,19 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
       expect(unique.size).toBe(slugs.length);
     });
 
-    it('C. Total public entities count is 2,587 (Phase 6 expanded)', async () => {
+    it('C. Total public entities count is 2,840 (Phase 37 expanded)', async () => {
       const { mosques } = await mosqueRepository.search({ status: 'all', limit: 3000 });
       const public_ = mosques.filter(m => m.dataStatus !== 'excluded');
-      expect(public_.length).toBe(2587);
+      expect(public_.length).toBe(2840);
     });
 
-    it('D. Verified entity count is 2,411 (Phase 6 expanded)', async () => {
+    it('D. Verified entity count is 2,649 (Phase 37 expanded)', async () => {
       let count = 0;
       for (const code of ENABLED_STATES) {
         const mosques = await mosqueRepository.getMosquesByState(code);
         count += mosques.filter(m => m.dataStatus === 'verified').length;
       }
-      expect(count).toBe(2411);
+      expect(count).toBe(2649);
     });
   });
 
@@ -651,13 +651,13 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
   // ─── Z. Eligibility Service ───────────────────────────────────────────────
 
   describe('Z. Eligibility service — correct tier decisions', () => {
-    it('exactly 96 total eligible city directories across all 13 states (Phase 6 expanded)', async () => {
+    it('exactly 104 total eligible city directories across all 17 states (Phase 37 expanded)', async () => {
       let total = 0;
       for (const code of ENABLED_STATES) {
         const cities = await cityRepository.getEligibleCities(code);
         total += cities.length;
       }
-      expect(total).toBe(96);
+      expect(total).toBe(104);
     });
 
     it('eligible cities count per state', async () => {
@@ -675,6 +675,11 @@ describe('PHASE 4C — National SEO & Topical Discovery', () => {
         VA: 8,
         OH: 5,
         NC: 7,
+        // Phase 37: 4 new states
+        CO: 2,
+        AZ: 2,
+        MA: 1,
+        MN: 3,
       };
       for (const [code, count] of Object.entries(expected)) {
         const cities = await cityRepository.getEligibleCities(code);

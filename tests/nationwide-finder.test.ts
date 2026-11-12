@@ -13,7 +13,7 @@ describe('Phase 3D — Nationwide / Regional Finder & Discovery Tests', () => {
     const enabledCodes = enabled.map(s => s.code);
     expect(enabledCodes).toEqual(expect.arrayContaining(['CA', 'TX', 'NY', 'FL', 'IL']));
 
-    const { mosques } = await mosqueRepository.search({ limit: 2000 });
+    const { mosques } = await mosqueRepository.search({ limit: 3500 });
     const representedStates = new Set(mosques.map(m => m.stateCode));
     for (const code of enabledCodes) {
       expect(representedStates.has(code)).toBe(true);
@@ -27,7 +27,7 @@ describe('Phase 3D — Nationwide / Regional Finder & Discovery Tests', () => {
       expect(isStateEnabled(code)).toBe(false);
     }
 
-    const { mosques } = await mosqueRepository.search({ limit: 2000 });
+    const { mosques } = await mosqueRepository.search({ limit: 3500 });
     for (const code of dormantCodes) {
       const match = mosques.find(m => m.stateCode === code);
       expect(match).toBeUndefined();
@@ -149,7 +149,7 @@ describe('Phase 3D — Nationwide / Regional Finder & Discovery Tests', () => {
   it('12. filters strictly to verified mosques when status=verified', async () => {
     const { mosques, total } = await mosqueRepository.search({ status: 'verified', limit: 3000 });
     expect(mosques.every(m => m.dataStatus === 'verified')).toBe(true);
-    expect(total).toBe(2411);
+    expect(total).toBe(2649);
   });
 
   // 13. Progressive result behavior / pagination

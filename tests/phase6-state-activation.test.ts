@@ -101,10 +101,10 @@ describe('Phase 6: 8 New States Activation & Quality Verification', () => {
     });
   });
 
-  // 3. Total active states is 13
-  it('3. Total active states in registry equals exactly 13', () => {
+  // 3. Total active states is 17
+  it('3. Total active states in registry equals exactly 17', () => {
     const enabled = getEnabledStates();
-    expect(enabled.length).toBe(13);
+    expect(enabled.length).toBe(17);
   });
 
   // 4. Dormant states remain disabled
@@ -204,16 +204,16 @@ describe('Phase 6: 8 New States Activation & Quality Verification', () => {
       expect(slugs.has(m.slug), `Slug collision detected for ${m.slug}`).toBe(false);
       slugs.add(m.slug);
     }
-    expect(slugs.size).toBe(2587);
+    expect(slugs.size).toBe(2840);
   });
 
-  // 12. Sitemap contains exactly 2525 URLs, no duplicates, no noindex
+  // 12. Sitemap contains exactly 2775 URLs, no duplicates, no noindex
   it('12. Sitemap includes verified mosques and eligible cities, excluding needs_review and /mosque-near-me', async () => {
     const routes = await sitemap();
-    expect(routes.length).toBe(2525);
+    expect(routes.length).toBe(2775);
 
     const urls = new Set(routes.map(r => r.url));
-    expect(urls.size).toBe(2525);
+    expect(urls.size).toBe(2775);
 
     // /mosque-near-me excluded
     expect(urls.has('https://usmosques.com/mosque-near-me')).toBe(false);

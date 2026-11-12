@@ -81,9 +81,9 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
   });
 
   describe('Phase 4: Sitemap Invariants', () => {
-    it('all sitemap URLs use https://usmosques.com and exactly match 2525 (Phase 6 expanded)', async () => {
+    it('all sitemap URLs use https://usmosques.com and exactly match 2775 (Phase 37 expanded)', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(2525);
+      expect(routes.length).toBe(2775);
 
       const oldDomainCount = routes.filter(r => r.url.includes('usmosquefinder.com')).length;
       expect(oldDomainCount).toBe(0);
@@ -93,7 +93,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
       // Verify no duplicates
       const uniqueUrls = new Set(routes.map(r => r.url));
-      expect(uniqueUrls.size).toBe(2525);
+      expect(uniqueUrls.size).toBe(2775);
     });
 
     it('sitemap excludes /mosque-near-me and needs_review/excluded records', async () => {
@@ -115,7 +115,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
 
     it('Phase 17 Cross-Check: every sitemap URL has matching canonical on usmosques.com and is not noindex', async () => {
       const routes = await sitemap();
-      expect(routes.length).toBe(2525);
+      expect(routes.length).toBe(2775);
 
       const seen = new Set<string>();
       let duplicateCount = 0;
@@ -134,7 +134,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       expect(duplicateCount).toBe(0);
       expect(nonCanonicalHostCount).toBe(0);
       expect(noindexCount).toBe(0);
-      expect(seen.size).toBe(2525);
+      expect(seen.size).toBe(2775);
     });
   });
 
@@ -239,7 +239,7 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
   });
 
   describe('Phase 12: SEO Invariants Preservation', () => {
-    it('exact counts for verified, needs_review, excluded, indexable, and noindex', async () => {
+    it('exact counts for verified, needs_review, excluded, indexable, and noindex (Phase 37 expanded)', async () => {
       const states = getEnabledStates();
       const allMosques = (
         await Promise.all(states.map(s => mosqueRepository.getMosquesByState(s.code)))
@@ -249,25 +249,25 @@ describe('Domain Migration: usmosquefinder.com -> usmosques.com', () => {
       const needsReview = allMosques.filter(m => m.dataStatus === 'needs_review');
       const excluded = allMosques.filter(m => m.dataStatus === 'excluded');
 
-      expect(verified.length).toBe(2411);
-      expect(needsReview.length).toBe(176);
+      expect(verified.length).toBe(2649);
+      expect(needsReview.length).toBe(191);
       expect(excluded.length).toBe(6);
-      expect(allMosques.length).toBe(2593);
+      expect(allMosques.length).toBe(2846);
 
       let eligibleCityCount = 0;
       for (const s of states) {
         const cities = await cityRepository.getEligibleCities(s.code);
         eligibleCityCount += cities.length;
       }
-      expect(eligibleCityCount).toBe(96);
+      expect(eligibleCityCount).toBe(104);
 
       const staticPages = 2; // / and /about
-      const statePages = states.length; // 13
+      const statePages = states.length; // 17
       const totalIndexable = staticPages + statePages + eligibleCityCount + verified.length;
-      expect(totalIndexable).toBe(2522);
+      expect(totalIndexable).toBe(2772);
 
-      const totalNoindex = 1 + needsReview.length; // /mosque-near-me + 176 needs_review
-      expect(totalNoindex).toBe(177);
+      const totalNoindex = 1 + needsReview.length; // /mosque-near-me + 191 needs_review
+      expect(totalNoindex).toBe(192);
     });
   });
 });
