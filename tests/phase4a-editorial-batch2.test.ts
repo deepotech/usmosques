@@ -9,9 +9,9 @@ import { cityRepository } from '@/lib/data/city-repository';
 import { mosqueRepository } from '@/lib/data/mosque-repository';
 
 describe('Phase 4A Batch 2 — Los Angeles & Tampa Editorial Guides Test Suite', () => {
-  it('contains exactly 8 city entries in CITY_EDITORIAL_REGISTRY (3 Phase 2 + 3 Batch 1 + 2 Batch 2)', () => {
+  it('contains all 8 baseline city entries plus CA|fresno in CITY_EDITORIAL_REGISTRY', () => {
     const keys = Object.keys(CITY_EDITORIAL_REGISTRY);
-    expect(keys.length).toBe(8);
+    expect(keys.length).toBe(9);
     // Phase 2
     expect(keys).toContain('TX|houston');
     expect(keys).toContain('MI|dearborn');
@@ -23,6 +23,8 @@ describe('Phase 4A Batch 2 — Los Angeles & Tampa Editorial Guides Test Suite',
     // Phase 4A Batch 2
     expect(keys).toContain('CA|los-angeles');
     expect(keys).toContain('FL|tampa');
+    // Phase 47
+    expect(keys).toContain('CA|fresno');
   });
 
   it('preserves existing 9 Phase 2 mosque editorial entries untouched', () => {

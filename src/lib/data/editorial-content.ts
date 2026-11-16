@@ -485,6 +485,26 @@ export const CITY_EDITORIAL_REGISTRY: Record<string, CityEditorialEntry> = {
       verifiedDate: '2026-11-02',
       sourceName: 'Phase 4A Batch 2 Research, November 2026'
     }
+  },
+
+  // ─── PHASE 47 FRESNO CITY GUIDE ──────────────────────────────────────────
+
+  'CA|fresno': {
+    stateCode: 'CA',
+    citySlug: 'fresno',
+    headline: 'Directory of Publicly Listed Mosques & Islamic Centers in Fresno, California',
+    overview:
+      'This directory documents publicly cataloged mosques, Islamic centers, and prayer facilities with Fresno postal addresses in California\'s Central Valley. Our database records 10 total listings in Fresno: seven verified places of worship and three co-located records maintained under administrative review. The directory is intended as a public reference for locating community facilities, viewing street addresses, and finding confirmed contact points. Because congregational schedules and facility access vary by location, worshippers and visitors are encouraged to contact facilities directly before visiting.',
+    communityContext:
+      'Worship and community facilities in Fresno serve local residents across distinct corridors of the city. On East Shaw Avenue near the university area, Masjid Fresno Islamic Center operates an established place of worship with dome architecture and a documented seven-day schedule. In Northwest Fresno along North Milburn Avenue, Badr Islamic Center maintains a dedicated suburban facility with published regular hours and direct telephone contact. On East Bullard Avenue in Northeast Fresno, My Deen Center provides an Islamic community facility with published opening hours. In South Fresno along Waterman Avenue, Masjid Al-Aqabah provides a neighborhood place of worship with direct telephone contact.',
+    geographicDistribution:
+      'Publicly cataloged facilities are distributed across several primary street corridors in the Fresno area. In the north and northeast sectors, facilities are situated along East Nees Avenue, East Bullard Avenue, and West Bedford Avenue. In Central Fresno, facilities are located along the East Shaw Avenue corridor. In the south and downtown sectors, facilities are listed along Waterman Avenue, B Street, and Fulton Street, serving central and southern neighborhoods. Individual facilities outside Fresno city limits maintain separate municipal listings.',
+    dataNotice:
+      'This directory indexes 10 listing records with Fresno postal addresses: seven verified places of worship and three records retained under administrative review. The three records under review include one outreach listing sharing an address on East Shaw Avenue and two co-located listings on East Nees Avenue undergoing deduplication; these records should not be interpreted as independent verified facilities. Among all 10 listings, six display published regular hours in public records, eight list telephone numbers, and four provide verified standalone websites. Worshippers are advised that directory opening hours reflect general building accessibility and do not constitute verified prayer, Iqamah, or Friday Jummah schedules. Visitors should contact individual centers directly to confirm current congregational schedules and visitor access.',
+    verification: {
+      verifiedDate: '2026-11-16',
+      sourceName: 'Fresno Public Directory Records & Facility Ingestion Audit'
+    }
   }
 };
 
